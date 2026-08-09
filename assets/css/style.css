@@ -1,0 +1,708 @@
+/* ==========================================================================
+   JoppeDS Studio's — stijl
+   Thema: broadcast-regie. Programmamonitor, lower thirds, tally-lampjes.
+   ========================================================================== */
+
+:root {
+  --bg:        #14161c;
+  --bg-2:      #191c24;
+  --panel:     #1e222b;
+  --panel-2:   #232833;
+  --line:      #2c313d;
+  --line-2:    #3a4152;
+  --text:      #e9eaee;
+  --muted:     #8c92a3;
+  --accent:    #ffdf59;
+  --accent-dp: #b79a2e;
+  --red:       #ff5b52;
+  --green:     #4fd18b;
+
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --mono:    "Space Mono", ui-monospace, monospace;
+
+  --gut: clamp(20px, 5vw, 64px);
+  --max: 1180px;
+  --r:   4px;
+
+  --ease: cubic-bezier(.2, .7, .3, 1);
+}
+
+* { box-sizing: border-box; }
+
+/* Het hidden-attribuut moet altijd winnen, ook van display:grid of :flex. */
+[hidden] { display: none !important; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: inherit; }
+
+::selection { background: var(--accent); color: #14161c; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gut);
+}
+
+/* --------------------------------------------------------------------------
+   Herbruikbare onderdelen
+   -------------------------------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: var(--accent);
+  flex: none;
+}
+
+.h2 {
+  font-size: clamp(30px, 4.4vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -.03em;
+  font-weight: 700;
+  margin: 0 0 20px;
+}
+
+.lead { color: var(--muted); max-width: 56ch; margin: 0; }
+
+.btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--text);
+  --btn-bd: var(--line-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .25s var(--ease), color .25s var(--ease),
+              border-color .25s var(--ease), transform .25s var(--ease);
+}
+.btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+.btn--fill { --btn-bg: var(--accent); --btn-fg: #14161c; --btn-bd: var(--accent); font-weight: 700; }
+.btn--fill:hover { --btn-bg: #ffe882; }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* Tally-lampje: het signaal dat een bron "in beeld" is */
+.tally {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-2);
+  flex: none;
+  transition: background .4s var(--ease), box-shadow .4s var(--ease);
+}
+.is-live .tally,
+.tally--on {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 223, 89, .14);
+}
+
+/* --------------------------------------------------------------------------
+   Topbalk
+   -------------------------------------------------------------------------- */
+
+.topbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  background: rgba(20, 22, 28, .82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s var(--ease), background .3s var(--ease);
+}
+.topbar.is-stuck { border-bottom-color: var(--line); }
+
+.topbar__in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 62px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-size: 15px;
+}
+.brand__mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #14161c;
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  flex: none;
+  overflow: hidden;
+}
+.brand__mark img { width: 100%; height: 100%; object-fit: contain; }
+/* Zolang assets/img/logo.svg ontbreekt, valt de mark terug op de letters JDS. */
+.brand__mark img ~ .brand__fallback { display: none; }
+
+.nav { display: flex; align-items: center; gap: 2px; }
+.nav a {
+  padding: 10px 11px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: var(--r);
+  white-space: nowrap;
+  transition: color .2s var(--ease);
+}
+.nav a:hover { color: var(--accent); }
+
+.timecode {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.timecode__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--red);
+  animation: rec 2.4s var(--ease) infinite;
+}
+@keyframes rec { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* --------------------------------------------------------------------------
+   Hero — de programmamonitor
+   -------------------------------------------------------------------------- */
+
+.hero { padding: 122px 0 0; position: relative; }
+
+.hero::before {
+  /* rasterlijnen, heel licht — als een monitor-overlay */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: .28;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, #000 20%, transparent 78%);
+  pointer-events: none;
+}
+
+.monitor {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg));
+  padding: clamp(26px, 5vw, 58px);
+  overflow: hidden;
+}
+
+/* Hoekmarkeringen zoals in een camerazoeker */
+.monitor__corner {
+  position: absolute;
+  width: 18px; height: 18px;
+  border: 2px solid var(--accent);
+  opacity: .55;
+}
+.monitor__corner--tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; }
+.monitor__corner--tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; }
+.monitor__corner--bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; }
+.monitor__corner--br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; }
+
+.monitor__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: clamp(30px, 6vw, 60px);
+}
+.monitor__onair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Lower third: schuift in zoals een live-overlay */
+.lower {
+  position: relative;
+  padding-left: clamp(16px, 3vw, 26px);
+  max-width: 20ch;
+}
+.lower::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  animation: bar-in .6s var(--ease) .1s forwards;
+}
+@keyframes bar-in { to { transform: scaleY(1); } }
+
+.hero__kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.hero__title {
+  font-size: clamp(42px, 9.5vw, 104px);
+  line-height: .95;
+  letter-spacing: -.045em;
+  font-weight: 700;
+  margin: 0 0 22px;
+}
+.hero__title .apos { color: var(--accent); }
+
+.hero__sub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--muted);
+  max-width: 46ch;
+  margin: 0 0 34px;
+}
+
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* Elk element van de hero komt na elkaar in beeld, als een grafiek-sequentie */
+.seq { opacity: 0; transform: translateY(14px); animation: seq-in .7s var(--ease) forwards; }
+.seq--1 { animation-delay: .15s; }
+.seq--2 { animation-delay: .28s; }
+.seq--3 { animation-delay: .41s; }
+.seq--4 { animation-delay: .54s; }
+.seq--5 { animation-delay: .67s; }
+@keyframes seq-in { to { opacity: 1; transform: none; } }
+
+/* Statistiekenstrook onderaan de monitor.
+   Op smalle schermen onder elkaar, vanaf 560px naast elkaar. */
+.readout {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.readout__cell {
+  padding: 20px clamp(16px, 3vw, 30px);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.readout__cell:first-child { border-top: 0; }
+
+@media (min-width: 560px) {
+  .readout { grid-template-columns: repeat(3, 1fr); }
+  .readout__cell { border-top: 0; border-left: 1px solid var(--line); padding-block: 24px; }
+  .readout__cell:first-child { border-left: 0; }
+}
+
+.readout__val {
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.readout__val small { color: var(--accent); font-size: .6em; vertical-align: super; margin-right: 1px; }
+.readout__lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 9px;
+}
+
+/* --------------------------------------------------------------------------
+   Secties
+   -------------------------------------------------------------------------- */
+
+.section { padding: clamp(76px, 11vw, 130px) 0; }
+.section--line { border-top: 1px solid var(--line); }
+
+/* Over mij */
+.about { display: grid; grid-template-columns: 1fr; gap: clamp(34px, 5vw, 60px); }
+@media (min-width: 860px) { .about { grid-template-columns: .85fr 1.15fr; align-items: start; } }
+
+.about__text p { margin: 0 0 18px; color: var(--muted); max-width: 54ch; }
+.about__text p:first-of-type { color: var(--text); font-size: clamp(18px, 2.2vw, 22px); letter-spacing: -.01em; }
+
+.facts { list-style: none; margin: 30px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.facts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.facts span:first-child { color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-size: 10px; }
+.facts span:last-child { color: var(--text); }
+
+/* --------------------------------------------------------------------------
+   Placeholder voor afbeeldingen
+   -------------------------------------------------------------------------- */
+
+.frame {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.frame::before {
+  /* diagonale arcering — zichtbaar zolang er geen foto is */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 11px,
+    rgba(255, 223, 89, .05) 11px 22px
+  );
+}
+.frame::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 12px; bottom: 11px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(20, 22, 28, .8);
+  padding: 4px 8px;
+  border-radius: 2px;
+}
+.frame img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frame img[hidden] { display: none; }
+.frame:has(img:not([hidden]))::after { display: none; }
+
+.frame--16x9 { aspect-ratio: 16 / 9; }
+.frame--portrait { aspect-ratio: 4 / 5; }
+
+/* --------------------------------------------------------------------------
+   Projecten — het bronnenrack
+   -------------------------------------------------------------------------- */
+
+.rack { display: flex; flex-direction: column; }
+
+.src {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(28px, 4vw, 44px) 0;
+  border-top: 1px solid var(--line);
+  transition: border-color .4s var(--ease);
+}
+.src:last-child { border-bottom: 1px solid var(--line); }
+.src:hover { border-top-color: var(--line-2); }
+
+@media (min-width: 820px) {
+  .src { grid-template-columns: 78px 1fr 340px; align-items: start; }
+}
+
+.src__id {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+.src__type {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 8px;
+}
+.src__title {
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.src__desc { color: var(--muted); margin: 0 0 20px; max-width: 52ch; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: 0 0 22px; padding: 0; }
+.chips li {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  color: var(--text);
+  background: var(--panel);
+}
+
+.src__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 3px;
+  transition: border-color .25s var(--ease), gap .25s var(--ease);
+}
+.src__link:hover { border-bottom-color: var(--accent); gap: 14px; }
+
+.src .frame { transition: transform .45s var(--ease); }
+.src:hover .frame { transform: translateY(-4px); }
+
+/* --------------------------------------------------------------------------
+   Opleidingen
+   -------------------------------------------------------------------------- */
+
+.courses { display: grid; gap: 14px; grid-template-columns: 1fr; margin-top: 12px; }
+@media (min-width: 720px) { .courses { grid-template-columns: repeat(3, 1fr); } }
+
+.course {
+  padding: 26px 24px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.course:hover { border-color: var(--accent); transform: translateY(-3px); }
+.course h3 { font-size: 19px; letter-spacing: -.02em; margin: 0 0 6px; }
+.course p { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.course__mark {
+  width: 26px; height: 26px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  display: grid; place-items: center;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Contact
+   -------------------------------------------------------------------------- */
+
+.contact { display: grid; grid-template-columns: 1fr; gap: clamp(32px, 5vw, 64px); }
+@media (min-width: 900px) { .contact { grid-template-columns: .9fr 1.1fr; align-items: start; } }
+
+.form { display: grid; gap: 16px; }
+.form__row { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 560px) { .form__row { grid-template-columns: 1fr 1fr; } }
+
+.field { display: grid; gap: 8px; }
+.field label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 13px 15px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 15px;
+  transition: border-color .25s var(--ease), background .25s var(--ease);
+}
+.field textarea { resize: vertical; min-height: 148px; line-height: 1.6; }
+.field input:focus,
+.field textarea:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.field input::placeholder,
+.field textarea::placeholder { color: #5a6070; }
+
+.form__note {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.form__note[hidden] { display: none; }
+.form__note--ok { border-color: var(--green); color: var(--green); }
+.form__note--err { border-color: var(--red); color: var(--red); }
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.footer { border-top: 1px solid var(--line); padding: 34px 0; }
+.footer__in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--muted);
+}
+.footer a { color: var(--muted); text-decoration: none; transition: color .2s var(--ease); }
+.footer a:hover { color: var(--accent); }
+.footer__links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+/* --------------------------------------------------------------------------
+   Onthullen bij scrollen
+   -------------------------------------------------------------------------- */
+
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* --------------------------------------------------------------------------
+   Telefoon en tablet
+   -------------------------------------------------------------------------- */
+
+/* Tablet en kleiner: de timecode is sfeer, geen informatie. Die mag weg
+   zodra de ruimte nodig is voor het menu. */
+@media (max-width: 900px) {
+  .timecode { display: none; }
+  .topbar__in { justify-content: space-between; }
+}
+
+/* Op telefoon staat de afbeelding van een project bovenaan, dan de tekst.
+   Zo zie je meteen waar het over gaat bij het scrollen. */
+@media (max-width: 819px) {
+  .src { gap: 18px; }
+  .src .frame { order: 1; }
+  .src__id { order: 2; padding-top: 0; }
+  .src__body { order: 3; }
+}
+
+@media (max-width: 620px) {
+  :root { --gut: 18px; }
+
+  .topbar__in { height: 56px; }
+  .brand span:not(.brand__mark):not(.brand__fallback) { display: none; }
+  .nav a { padding: 10px 8px; font-size: 10px; letter-spacing: .08em; }
+
+  .monitor { padding: 40px 20px 30px; }
+  .monitor__corner { width: 13px; height: 13px; }
+  .monitor__bar { font-size: 10px; letter-spacing: .12em; }
+
+  .hero { padding-top: 96px; }
+  .hero__cta { flex-direction: column; align-items: stretch; }
+  .hero__cta .btn { justify-content: center; }
+
+  .chips li { font-size: 10px; padding: 4px 9px; }
+
+  .facts li { flex-direction: column; align-items: flex-start; gap: 3px; }
+
+  .footer__in { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* Zeer smalle toestellen: één menu-item minder zodat er niets afbreekt. */
+@media (max-width: 420px) {
+  .nav a[href="#opleidingen"] { display: none; }
+  .hero__title { font-size: clamp(36px, 11vw, 52px); }
+}
+
+/* Liggend op een telefoon: minder verticale ruimte verspillen. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero { padding-top: 84px; }
+  .monitor__bar { margin-bottom: 22px; }
+}
+
+/* --------------------------------------------------------------------------
+   Minder beweging
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .seq, .reveal { opacity: 1 !important; transform: none !important; }
+  .lower::before { transform: scaleY(1) !important; }
+}

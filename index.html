@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JoppeDS Studio's — Content creation, livestreams en thumbnails</title>
+<meta name="description" content="JoppeDS Studio's. Video, livestreams met multi-cam en green screen, en thumbnail design. Portfolio van Joppe.">
+<meta name="theme-color" content="#14161c">
+
+<meta property="og:title" content="JoppeDS Studio's">
+<meta property="og:description" content="Video, livestreams en thumbnails. Van eerste opname tot laatste render.">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ======================= Topbalk ======================= -->
+<header class="topbar" id="topbar">
+  <div class="wrap topbar__in">
+    <a class="brand" href="#top">
+      <span class="brand__mark">
+        <img src="assets/img/logo.svg" alt="" onerror="this.remove()">
+        <span class="brand__fallback">JDS</span>
+      </span>
+      <span data-bind="hero.studio">JoppeDS Studio's</span>
+    </a>
+
+    <nav class="nav" aria-label="Hoofdmenu">
+      <a href="#over">Over</a>
+      <a href="#projecten">Projecten</a>
+      <a href="#opleidingen">Opleidingen</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <div class="timecode" aria-hidden="true">
+      <span class="timecode__dot"></span>
+      <span id="tc">00:00:00:00</span>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ======================= Hero ======================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="monitor">
+        <span class="monitor__corner monitor__corner--tl"></span>
+        <span class="monitor__corner monitor__corner--tr"></span>
+        <span class="monitor__corner monitor__corner--bl"></span>
+        <span class="monitor__corner monitor__corner--br"></span>
+
+        <div class="monitor__bar seq seq--1">
+          <span class="monitor__onair"><span class="tally tally--on"></span> On air</span>
+          <span>Prog 1</span>
+          <span>1920 × 1080 · 25p</span>
+        </div>
+
+        <div class="lower">
+          <p class="hero__kicker seq seq--2" data-bind="hero.kicker">Content creation studio</p>
+          <h1 class="hero__title seq seq--3">JoppeDS Studio<span class="apos">'</span>s</h1>
+        </div>
+
+        <p class="hero__sub seq seq--4" data-bind="hero.ondertitel">
+          Video, livestreams en thumbnails. Van eerste opname tot laatste render.
+        </p>
+
+        <div class="hero__cta seq seq--5">
+          <a class="btn btn--fill" href="#projecten" data-bind="hero.knop1">Bekijk mijn werk</a>
+          <a class="btn" href="#contact" data-bind="hero.knop2">Neem contact op</a>
+        </div>
+      </div>
+
+      <div class="readout seq seq--5" id="readout"></div>
+    </div>
+  </section>
+
+  <!-- ======================= Over mij ======================= -->
+  <section class="section" id="over">
+    <div class="wrap about">
+      <div class="reveal">
+        <div class="frame frame--portrait" data-label="Foto — 4:5">
+          <img id="over-foto" src="assets/img/joppe.jpg" alt="Joppe" hidden>
+        </div>
+      </div>
+
+      <div class="about__text reveal">
+        <p class="eyebrow">Wie zit er achter de knoppen</p>
+        <h2 class="h2" data-bind="over.titel">Over mij</h2>
+        <div id="over-tekst"></div>
+        <ul class="facts" id="over-feiten"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= Projecten ======================= -->
+  <section class="section section--line" id="projecten">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="eyebrow">Bronnen in het rack</p>
+        <h2 class="h2">Eerdere projecten</h2>
+        <p class="lead">Elk project met wat het opleverde en waar je het kan bekijken.</p>
+      </div>
+      <div class="rack" id="rack"></div>
+    </div>
+  </section>
+
+  <!-- ======================= Opleidingen ======================= -->
+  <section class="section section--line" id="opleidingen">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="eyebrow">Waar ik het geleerd heb</p>
+        <h2 class="h2">Opleidingen</h2>
+      </div>
+      <div class="courses" id="courses"></div>
+    </div>
+  </section>
+
+  <!-- ======================= Contact ======================= -->
+  <section class="section section--line" id="contact">
+    <div class="wrap contact">
+      <div class="reveal">
+        <p class="eyebrow">Lijn open</p>
+        <h2 class="h2" data-bind="contact.titel">Neem contact op</h2>
+        <p class="lead" data-bind="contact.tekst"></p>
+        <ul class="facts" id="contact-links"></ul>
+      </div>
+
+      <form class="form reveal" id="contactform" novalidate>
+        <div class="form__row">
+          <div class="field">
+            <label for="voornaam">Voornaam</label>
+            <input id="voornaam" name="voornaam" type="text" required maxlength="80" autocomplete="given-name" placeholder="Joppe">
+          </div>
+          <div class="field">
+            <label for="naam">Naam</label>
+            <input id="naam" name="naam" type="text" required maxlength="80" autocomplete="family-name" placeholder="Achternaam">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">E-mailadres</label>
+          <input id="email" name="email" type="email" required maxlength="160" autocomplete="email" placeholder="jij@voorbeeld.be">
+        </div>
+
+        <div class="field">
+          <label for="bericht">Bericht</label>
+          <textarea id="bericht" name="bericht" required maxlength="4000" placeholder="Waarmee kan ik je helpen?"></textarea>
+        </div>
+
+        <!-- Verborgen veld tegen spambots. Mensen zien dit niet en laten het leeg. -->
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off"
+               style="position:absolute;left:-9999px;opacity:0;height:0;width:0" aria-hidden="true">
+
+        <div class="form__note" id="formnote" hidden></div>
+
+        <div>
+          <button class="btn btn--fill" type="submit" id="formsubmit" data-bind="contact.knop">Verstuur bericht</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<!-- ======================= Footer ======================= -->
+<footer class="footer">
+  <div class="wrap footer__in">
+    <span>© <span id="jaar"></span> <span data-bind="footer.tekst">JoppeDS Studio's</span></span>
+    <div class="footer__links" id="footer-links"></div>
+    <a href="admin.html">Admin</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/content.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/analytics.js"></script>
+</body>
+</html>
