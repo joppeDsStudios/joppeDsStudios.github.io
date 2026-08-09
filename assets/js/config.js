@@ -13,8 +13,8 @@
    ========================================================================== */
 
 window.SITE_CONFIG = {
-  SUPABASE_URL: "https://lugreqntoihehrojloml.supabase.co/rest/v1/",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z3JlcW50b2loZWhyb2psb21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyOTAzNjAsImV4cCI6MjEwMTg2NjM2MH0.JG4OGTMVQLY4bTPhEgeWD9UYyoKuDSkoerLZ1PP9uRA"
+SUPABASE_URL: "https://lugreqntoihehrojloml.supabase.co",
+SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z3JlcW50b2loZWhyb2psb21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyOTAzNjAsImV4cCI6MjEwMTg2NjM2MH0.JG4OGTMVQLY4bTPhEgeWD9UYyoKuDSkoerLZ1PP9uRA"
 };
 
 /* Zolang bovenstaande niet ingevuld is, draait de site op de standaardinhoud
