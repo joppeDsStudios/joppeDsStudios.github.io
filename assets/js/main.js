@@ -129,10 +129,61 @@ function render(c) {
     .map((f) => `<li><span>${esc(f.label)}</span><span>${esc(f.value)}</span></li>`)
     .join("");
 
+  /* Foto bij "Over mij".
+     Belangrijk: de afbeelding kan al geladen zijn voor dit script draait.
+     Dan is het load-event allang gepasseerd en zou een listener nooit meer
+     afgaan. Daarom eerst controleren of de afbeelding er al is. */
   const foto = $("#over-foto");
-  if (c.over?.foto) foto.src = c.over.foto;
-  foto.addEventListener("load", () => (foto.hidden = false));
-  foto.addEventListener("error", () => foto.remove());
+  if (foto) {
+    const toon = () => (foto.hidden = false);
+    const weg = () => foto.remove();
+
+    if (c.over?.foto) foto.src = c.over.foto;
+
+    if (foto.complete) {
+      foto.naturalWidth > 0 ? toon() : weg();
+    } else {
+      foto.addEventListener("load", toon);
+      foto.addEventListener("error", weg);
+    }
+  }
+
+  /* Reviews */
+  const reviews = c.reviews || [];
+  const revSec = $("#reviews-sectie");
+  if (revSec) revSec.hidden = reviews.length === 0;
+
+  const sterren = (n) => {
+    const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+    if (!v) return "";
+    return `
+      <div class="stars" role="img" aria-label="${v} van 5 sterren">
+        ${[1, 2, 3, 4, 5]
+          .map(
+            (i) => `
+          <svg class="star ${i <= v ? "is-on" : ""}" width="15" height="15"
+               viewBox="0 0 20 19" aria-hidden="true">
+            <path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z"
+                  fill="currentColor"/>
+          </svg>`
+          )
+          .join("")}
+      </div>`;
+  };
+
+  $("#reviews").innerHTML = reviews
+    .map(
+      (r) => `
+      <figure class="quote reveal">
+        ${sterren(r.sterren)}
+        <blockquote>${esc(r.tekst)}</blockquote>
+        <figcaption>
+          <span class="quote__naam">${esc(r.naam)}</span>
+          ${r.rol ? `<span class="quote__rol">${esc(r.rol)}</span>` : ""}
+        </figcaption>
+      </figure>`
+    )
+    .join("");
 
   /* Projectenrack */
   $("#rack").innerHTML = (c.projecten || [])

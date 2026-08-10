@@ -43,6 +43,7 @@
     <div class="admin-bar__in">
       <div class="tabs">
         <button class="tab is-on" data-tab="berichten">Berichten <span id="badge"></span></button>
+        <button class="tab" data-tab="aanvragen">Aanvragen <span id="badge-aanvragen"></span></button>
         <button class="tab" data-tab="bezoekers">Bezoekers</button>
         <button class="tab" data-tab="inhoud">Inhoud</button>
       </div>
@@ -59,6 +60,69 @@
     <!-- ---------- Berichten ---------- -->
     <section class="tabpane" id="pane-berichten">
       <div id="msglist"></div>
+    </section>
+
+    <!-- ---------- Aanvragen ---------- -->
+    <section class="tabpane" id="pane-aanvragen" hidden>
+
+      <details class="group" id="codegroep">
+        <summary>
+          <span>Toegangscodes</span>
+          <span class="group__sub" id="codesamenvatting"></span>
+        </summary>
+        <div class="group__body">
+          <p class="hint">
+            Genereer een code en stuur die naar de klant. Met die code kan hij op
+            <code>aanvraag.html</code> één keer een projectaanvraag indienen.
+          </p>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="c-label">Waarvoor is deze code?</label>
+              <input id="c-label" type="text" maxlength="80" placeholder="Bijvoorbeeld: Warande Kortrijk">
+            </div>
+            <div class="field">
+              <label for="c-email">E-mailadres van de klant</label>
+              <input id="c-email" type="email" maxlength="160" placeholder="Optioneel, om te onthouden">
+            </div>
+          </div>
+          <div class="form__row">
+            <div class="field">
+              <label for="c-dagen">Geldig gedurende</label>
+              <select id="c-dagen">
+                <option value="14">14 dagen</option>
+                <option value="30" selected>30 dagen</option>
+                <option value="90">90 dagen</option>
+                <option value="">Onbeperkt</option>
+              </select>
+            </div>
+            <div class="field" style="align-self:end">
+              <button class="btn btn--fill" id="genereer">Code genereren</button>
+            </div>
+          </div>
+
+          <div class="form__note" id="codenote" hidden></div>
+
+          <div class="diagnose">
+            <button class="mini" id="diagnoseknop">Controleer de installatie</button>
+            <span class="hint" style="margin:0">Werkt een code niet? Klik hier eerst.</span>
+          </div>
+          <div id="diagnose"></div>
+
+          <div id="codelijst" style="margin-top:18px"></div>
+        </div>
+      </details>
+
+      <div class="filters" id="statusfilter">
+        <button class="mini is-on" data-status="">Alles</button>
+        <button class="mini" data-status="nieuw">Nieuw</button>
+        <button class="mini" data-status="in behandeling">In behandeling</button>
+        <button class="mini" data-status="goedgekeurd">Goedgekeurd</button>
+        <button class="mini" data-status="afgerond">Afgerond</button>
+        <button class="mini" data-status="afgewezen">Afgewezen</button>
+      </div>
+
+      <div id="aanvraaglijst"></div>
     </section>
 
     <!-- ---------- Bezoekers ---------- -->
@@ -84,6 +148,8 @@
 
   </div>
 </div>
+
+<dialog class="sheet" id="detail"></dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/js/config.js"></script>

@@ -93,6 +93,16 @@ window.DEFAULT_CONTENT = {
     }
   ],
 
+  reviews: [
+    {
+      naam: "Voeg je eerste review toe",
+      rol: "Via de admin, tabblad Inhoud",
+      sterren: 5,
+      tekst:
+        "Deze sectie verdwijnt automatisch van de site zolang er geen reviews zijn. Vul er één in en ze verschijnt vanzelf."
+    }
+  ],
+
   opleidingen: [
     { titel: "Masterclass Audio", instituut: "Quindo" },
     { titel: "Masterclass Live Streaming", instituut: "Quindo" },
