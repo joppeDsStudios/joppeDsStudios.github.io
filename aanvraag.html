@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projectaanvraag — JoppeDS Studio's</title>
+<meta name="description" content="Dien je projectaanvraag in bij JoppeDS Studio's met de code die je kreeg.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#14161c">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ======================= Topbalk ======================= -->
+<header class="topbar is-stuck">
+  <div class="wrap topbar__in">
+    <a class="brand" href="index.html">
+      <span class="brand__mark">
+        <img src="assets/img/logo.svg" alt="" onerror="this.remove()">
+        <span class="brand__fallback">JDS</span>
+      </span>
+      <span>JoppeDS Studio's</span>
+    </a>
+    <nav class="nav" aria-label="Hoofdmenu">
+      <a href="index.html">Terug naar de site</a>
+    </nav>
+  </div>
+</header>
+
+<main class="aanvraag">
+  <div class="wrap">
+
+    <!-- ---------- Stap 1: code invoeren ---------- -->
+    <section id="stap-code">
+      <div class="monitor monitor--slim">
+        <span class="monitor__corner monitor__corner--tl"></span>
+        <span class="monitor__corner monitor__corner--tr"></span>
+        <span class="monitor__corner monitor__corner--bl"></span>
+        <span class="monitor__corner monitor__corner--br"></span>
+
+        <div class="monitor__bar">
+          <span class="monitor__onair"><span class="tally"></span> Vergrendeld</span>
+          <span>Projectaanvraag</span>
+        </div>
+
+        <div class="lower">
+          <p class="hero__kicker">Toegangscode</p>
+          <h1 class="hero__title hero__title--sm">Vul je code in</h1>
+        </div>
+
+        <p class="hero__sub">
+          Je kreeg een code van Joppe. Vul die hieronder in om het aanvraagformulier
+          te openen. Elke code werkt één keer.
+        </p>
+
+        <form class="codeform" id="codeform">
+          <div class="field">
+            <label for="code">Code</label>
+            <input id="code" type="text" inputmode="text" autocomplete="off"
+                   spellcheck="false" placeholder="JDS-XXXX-XXXX">
+          </div>
+          <div class="form__note" id="codenote" hidden></div>
+          <button class="btn btn--fill" type="submit" id="codebtn">Formulier openen</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ---------- Stap 2: het formulier ---------- -->
+    <section id="stap-form" hidden>
+      <div class="reveal is-in">
+        <p class="eyebrow">Code aanvaard <span id="codelabel"></span></p>
+        <h1 class="h2">Vertel me over je project</h1>
+        <p class="lead">
+          Hoe vollediger je dit invult, hoe scherper ik kan inschatten wat er nodig is.
+          Weet je iets nog niet? Laat het gerust leeg.
+        </p>
+      </div>
+
+      <form class="form aanvraagform" id="projectform" novalidate>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">01</span> Jouw gegevens</legend>
+          <div class="form__row">
+            <div class="field">
+              <label for="f-naam">Naam <span class="verplicht">*</span></label>
+              <input id="f-naam" type="text" maxlength="100" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="f-email">E-mailadres <span class="verplicht">*</span></label>
+              <input id="f-email" type="email" maxlength="160" autocomplete="email" required>
+            </div>
+          </div>
+          <div class="form__row">
+            <div class="field">
+              <label for="f-bedrijf">Bedrijf of kanaal</label>
+              <input id="f-bedrijf" type="text" maxlength="120" placeholder="Optioneel">
+            </div>
+            <div class="field">
+              <label for="f-tel">Telefoonnummer</label>
+              <input id="f-tel" type="tel" maxlength="40" placeholder="Optioneel">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">02</span> Het project</legend>
+          <div class="field">
+            <label for="f-titel">Werktitel <span class="verplicht">*</span></label>
+            <input id="f-titel" type="text" maxlength="140" placeholder="Bijvoorbeeld: Aftermovie zomerfestival" required>
+          </div>
+          <div class="field">
+            <label for="f-beschrijving">Wat wil je precies laten maken? <span class="verplicht">*</span></label>
+            <textarea id="f-beschrijving" rows="6" maxlength="4000"
+              placeholder="Beschrijf het idee, de boodschap en voor wie het bedoeld is."></textarea>
+          </div>
+          <div class="field">
+            <label for="f-doel">Wat moet het opleveren?</label>
+            <select id="f-doel">
+              <option value="">Kies…</option>
+              <option>Meer naamsbekendheid</option>
+              <option>Meer verkoop of inschrijvingen</option>
+              <option>Entertainment</option>
+              <option>Informeren of uitleggen</option>
+              <option>Sfeerbeeld of herinnering</option>
+              <option>Iets anders</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">03</span> Vorm en platform</legend>
+          <div class="form__row">
+            <div class="field">
+              <label for="f-formaat">Soort content</label>
+              <select id="f-formaat">
+                <option value="">Kies…</option>
+                <option>Long-form video</option>
+                <option>Short-form (Shorts, Reels, TikTok)</option>
+                <option>Long-form én short-form</option>
+                <option>Livestream</option>
+                <option>Thumbnail design</option>
+                <option>Iets anders</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-lengte">Gewenste lengte</label>
+              <input id="f-lengte" type="text" maxlength="60" placeholder="Bijvoorbeeld: 8 à 10 minuten">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Platform</label>
+            <div class="checks" id="f-platform">
+              <label class="check"><input type="checkbox" value="YouTube"><span>YouTube</span></label>
+              <label class="check"><input type="checkbox" value="TikTok"><span>TikTok</span></label>
+              <label class="check"><input type="checkbox" value="Instagram"><span>Instagram</span></label>
+              <label class="check"><input type="checkbox" value="Facebook"><span>Facebook</span></label>
+              <label class="check"><input type="checkbox" value="Twitch"><span>Twitch</span></label>
+              <label class="check"><input type="checkbox" value="LinkedIn"><span>LinkedIn</span></label>
+              <label class="check"><input type="checkbox" value="Eigen website"><span>Eigen website</span></label>
+              <label class="check"><input type="checkbox" value="Intern gebruik"><span>Intern gebruik</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-aantal">Hoeveel video's?</label>
+            <input id="f-aantal" type="number" min="1" max="999" placeholder="1">
+          </div>
+        </fieldset>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">04</span> Stijl</legend>
+          <div class="field">
+            <label>Welke richting zie je voor je?</label>
+            <div class="checks" id="f-stijl">
+              <label class="check"><input type="checkbox" value="Cinematisch"><span>Cinematisch</span></label>
+              <label class="check"><input type="checkbox" value="Snel en energiek"><span>Snel en energiek</span></label>
+              <label class="check"><input type="checkbox" value="Rustig en informatief"><span>Rustig en informatief</span></label>
+              <label class="check"><input type="checkbox" value="Gaming"><span>Gaming</span></label>
+              <label class="check"><input type="checkbox" value="Vlog"><span>Vlog</span></label>
+              <label class="check"><input type="checkbox" value="Documentair"><span>Documentair</span></label>
+              <label class="check"><input type="checkbox" value="Humoristisch"><span>Humoristisch</span></label>
+              <label class="check"><input type="checkbox" value="Zakelijk"><span>Zakelijk</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-referenties">Voorbeelden die je aanspreken</label>
+            <textarea id="f-referenties" rows="3" maxlength="2000"
+              placeholder="Plak hier links naar video's met een stijl die je goed vindt."></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">05</span> Praktisch</legend>
+          <div class="form__row">
+            <div class="field">
+              <label for="f-budget">Budget</label>
+              <select id="f-budget">
+                <option value="">Kies…</option>
+                <option>Minder dan € 100</option>
+                <option>€ 100 – € 250</option>
+                <option>€ 250 – € 500</option>
+                <option>€ 500 – € 1000</option>
+                <option>Meer dan € 1000</option>
+                <option>Nog te bespreken</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-deadline">Wanneer heb je het nodig?</label>
+              <input id="f-deadline" type="date">
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-drive">Link naar je bestanden</label>
+            <input id="f-drive" type="url" maxlength="500"
+                   placeholder="https://drive.google.com/…">
+            <p class="field__hint">
+              Zet je beeldmateriaal, logo's en muziek in een Google Drive-map en zet die
+              op "iedereen met de link kan bekijken". Plak de link hier.
+            </p>
+          </div>
+          <div class="field">
+            <label for="f-assets">Wat zit er in die map?</label>
+            <textarea id="f-assets" rows="3" maxlength="2000"
+              placeholder="Bijvoorbeeld: 40 minuten ruwe beelden, logo in SVG, twee muzieknummers."></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="fset">
+          <legend><span class="fset__nr">06</span> Nog iets kwijt?</legend>
+          <div class="field">
+            <label for="f-extra">Extra informatie</label>
+            <textarea id="f-extra" rows="4" maxlength="3000"
+              placeholder="Alles wat ik verder moet weten."></textarea>
+          </div>
+        </fieldset>
+
+        <div class="form__note" id="formnote" hidden></div>
+
+        <div class="aanvraag__submit">
+          <button class="btn btn--fill" type="submit" id="verzend">Aanvraag indienen</button>
+          <p class="field__hint">Je kan dit maar één keer indienen met deze code.</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- ---------- Stap 3: bevestiging ---------- -->
+    <section id="stap-klaar" hidden>
+      <div class="monitor monitor--slim">
+        <span class="monitor__corner monitor__corner--tl"></span>
+        <span class="monitor__corner monitor__corner--tr"></span>
+        <span class="monitor__corner monitor__corner--bl"></span>
+        <span class="monitor__corner monitor__corner--br"></span>
+
+        <div class="monitor__bar">
+          <span class="monitor__onair"><span class="tally tally--on"></span> Ontvangen</span>
+        </div>
+
+        <div class="lower">
+          <p class="hero__kicker">Gelukt</p>
+          <h1 class="hero__title hero__title--sm">Aanvraag binnen</h1>
+        </div>
+
+        <p class="hero__sub">
+          Bedankt. Ik bekijk je aanvraag en neem contact op via het e-mailadres dat je
+          opgaf. Hou je referentie bij voor als je erover mailt.
+        </p>
+
+        <p class="ref" id="ref"></p>
+
+        <div class="hero__cta">
+          <a class="btn" href="index.html">Terug naar de site</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__in">
+    <span>© <span id="jaar"></span> JoppeDS Studio's</span>
+    <a href="index.html">Naar de website</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/content.js"></script>
+<script src="assets/js/aanvraag.js"></script>
+<script src="assets/js/analytics.js"></script>
+</body>
+</html>
