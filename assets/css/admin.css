@@ -91,24 +91,7 @@ body.admin { background: var(--bg); }
 .msg__body { white-space: pre-wrap; color: var(--text); margin: 0 0 14px; line-height: 1.6; }
 .msg__acts { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.mini {
-  padding: 7px 13px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  transition: color .2s var(--ease), border-color .2s var(--ease);
-}
-.mini:hover { color: var(--accent); border-color: var(--accent); }
-.mini--danger:hover { color: var(--red); border-color: var(--red); }
+
 
 .empty {
   border: 1px dashed var(--line-2);
@@ -260,112 +243,175 @@ details.group[open] > summary { border-bottom: 1px solid var(--line); }
 }
 .code-row.is-op .code-row__code { color: var(--muted); text-decoration: line-through; }
 .code-row__meta { font-family: var(--mono); font-size: 11px; color: var(--muted); flex: 1 1 140px; }
-.code-row__acts { display: flex; gap: 6px; margin-left: auto; }
+.code-row__acts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 
-/* ---------- Detailvenster ---------- */
+/* ---------- Aan/uit-schakelaar ---------- */
 
-dialog.sheet {
-  width: min(680px, calc(100vw - 24px));
-  max-height: 88vh;
-  padding: 0;
-  border: 1px solid var(--line-2);
-  border-radius: 8px;
-  background: var(--bg-2);
-  color: var(--text);
-  overflow: auto;
-}
-dialog.sheet::backdrop { background: rgba(10, 11, 15, .74); }
-
-.sheet__head {
-  position: sticky;
-  top: 0;
-  background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
-  padding: 18px 22px;
+.schakel {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 14px;
-  z-index: 2;
-}
-.sheet__head h2 { margin: 0 0 6px; font-size: 20px; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.sheet__body { padding: 20px 22px 26px; }
-.sheet__foot {
-  position: sticky;
-  bottom: 0;
-  background: var(--bg-2);
-  border-top: 1px solid var(--line);
-  padding: 14px 22px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.dl { display: grid; margin: 0 0 22px; }
-.dl__row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-}
-@media (min-width: 560px) {
-  .dl__row { grid-template-columns: 168px 1fr; gap: 16px; align-items: baseline; }
-}
-.dl__lbl {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.dl__val { overflow-wrap: anywhere; white-space: pre-wrap; }
-.dl__val a { color: var(--accent); }
-
-.grid2 { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 700px) { .grid2 { grid-template-columns: 1fr 1fr; } }
-
-.item {
+  padding: 15px 17px;
   border: 1px solid var(--line);
-  border-left: 2px solid var(--line-2);
   border-radius: var(--r);
   background: var(--bg-2);
-  padding: 18px;
-  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .25s var(--ease), background .25s var(--ease);
 }
-.item__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.schakel:has(input:checked) { border-color: var(--accent); background: rgba(255, 223, 89, .06); }
+.schakel input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.schakel__spoor {
+  width: 42px; height: 24px;
+  border-radius: 100px;
+  background: var(--line-2);
+  flex: none;
+  padding: 3px;
+  margin-top: 1px;
+  transition: background .22s var(--ease);
+}
+.schakel__knop {
+  display: block;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--bg);
+  transition: transform .22s var(--ease);
+}
+.schakel:has(input:checked) .schakel__spoor { background: var(--accent); }
+.schakel:has(input:checked) .schakel__knop { transform: translateX(18px); }
+.schakel:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.schakel__tekst { display: grid; gap: 4px; }
+.schakel__tekst strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.schakel__tekst span {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ---------- Zoeken ---------- */
+
+.zoek {
+  position: relative;
   margin-bottom: 14px;
 }
-.item__nr {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--accent);
+.zoek input {
+  width: 100%;
+  padding: 12px 40px 12px 40px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 16px;
+  min-height: 46px;
+  transition: border-color .25s var(--ease);
 }
-.item__tools { display: flex; gap: 6px; }
+.zoek input:focus { outline: none; border-color: var(--accent); }
+.zoek input::placeholder { color: #5a6070; }
+.zoek__icoon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.zoek__wis {
+  position: absolute;
+  right: 8px; top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: var(--r);
+}
+.zoek__wis:hover { color: var(--accent); }
+.zoek__wis[hidden] { display: none; }
 
-/* ---------- Opslaan ---------- */
+.zoek__aantal {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin: -4px 0 14px;
+}
 
-.savebar {
-  position: sticky;
-  bottom: 0;
-  margin-top: 22px;
-  padding: 16px 0;
-  background: linear-gradient(180deg, transparent, var(--bg) 32%);
+mark {
+  background: rgba(255, 223, 89, .26);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ---------- Waarschuwing bovenaan ---------- */
+
+.waarschuwing {
+  border: 1px solid var(--red);
+  border-left-width: 3px;
+  border-radius: var(--r);
+  background: rgba(255, 91, 82, .08);
+  padding: 15px 18px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.waarschuwing strong { color: var(--red); }
+.waarschuwing code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-2);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* ---------- Reviews ---------- */
+
+.rev {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  transition: border-color .25s var(--ease);
+}
+.rev:hover { border-color: var(--line-2); }
+.rev.is-nieuw { border-left: 3px solid var(--accent); }
+
+.rev__top {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 13px;
 }
-.savebar .status { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.savebar .status.ok { color: var(--green); }
-.savebar .status.err { color: var(--red); }
+.rev__top .msg__meta { margin-left: auto; }
+
+.rev__tekst {
+  margin: 0 0 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rev__wie {
+  margin: 0 0 15px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.rev__wie strong { color: var(--text); font-weight: 700; }
+.rev__wie a { color: var(--accent); }
+
+.rev__acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width: 620px) {
+  .rev__top .msg__meta { margin-left: 0; flex: 1 1 100%; }
+}
 
 /* ---------- Zelftest ---------- */
 
@@ -463,9 +509,43 @@ dialog.sheet::backdrop { background: rgba(10, 11, 15, .74); }
 
 @media (max-width: 620px) {
   .admin-bar__in { padding-block: 12px; gap: 10px; }
-  .tabs { width: 100%; }
-  .tab { flex: 1; padding: 10px 8px; font-size: 10px; letter-spacing: .08em; }
+
+  /* De tabbladen schuiven horizontaal in plaats van hun tekst af te breken.
+     Vier labels naast elkaar persen op 390px levert anders twee regels op. */
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 10px 11px;
+    font-size: 10px;
+    letter-spacing: .08em;
+  }
+
   .login__box { padding: 26px 20px; }
   .savebar { flex-direction: column; align-items: stretch; }
   .savebar .btn { justify-content: center; }
+  .code-row__acts { margin-left: 0; }
 }
+
+/* Op de smalste toestellen valt de samenvatting rechts weg, zodat elke
+   sectietitel op één regel past. */
+@media (max-width: 480px) {
+  .group__sub { display: none; }
+}
+
+/* ---------- Formuliereditor ---------- */
+
+.item--blok {
+  border-left-color: var(--accent);
+  background: var(--panel);
+  padding: 18px;
+}
+.item--veld { background: var(--bg); }
+.item--veld .item__nr { color: var(--text); text-transform: none; letter-spacing: 0;
+                        font-family: var(--display); font-size: 13px; font-weight: 600; }

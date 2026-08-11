@@ -27,6 +27,37 @@ const dig = (obj, path) => path.split(".").reduce((o, k) => (o == null ? o : o[k
 })();
 
 /* --------------------------------------------------------------------------
+   Menu op telefoon
+   -------------------------------------------------------------------------- */
+(function menu() {
+  const knop = $("#menuknop");
+  const nav = $("#nav");
+  if (!knop || !nav) return;
+
+  const zet = (open) => {
+    nav.classList.toggle("is-open", open);
+    knop.setAttribute("aria-expanded", String(open));
+    knop.setAttribute("aria-label", open ? "Menu sluiten" : "Menu openen");
+  };
+
+  knop.addEventListener("click", () => zet(!nav.classList.contains("is-open")));
+
+  /* Na het kiezen van een bestemming hoort het menu dicht te gaan */
+  nav.addEventListener("click", (e) => { if (e.target.closest("a")) zet(false); });
+
+  /* Klik ergens anders, of Escape */
+  document.addEventListener("click", (e) => {
+    if (!nav.contains(e.target) && !knop.contains(e.target)) zet(false);
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") zet(false); });
+
+  /* Bij het terugschalen naar een breed scherm moet het menu weer normaal doen */
+  window.matchMedia("(min-width: 901px)").addEventListener("change", (m) => {
+    if (m.matches) zet(false);
+  });
+})();
+
+/* --------------------------------------------------------------------------
    Topbalk krijgt een lijn zodra je scrollt
    -------------------------------------------------------------------------- */
 (function stickyBar() {
@@ -148,10 +179,53 @@ function render(c) {
     }
   }
 
-  /* Reviews */
-  const reviews = c.reviews || [];
-  const revSec = $("#reviews-sectie");
-  if (revSec) revSec.hidden = reviews.length === 0;
+  /* Team */
+  const leden = c.team?.leden || [];
+  const teamSec = $("#team");
+  if (teamSec) {
+    teamSec.hidden = leden.length === 0;
+    $("#nav-team").hidden = leden.length === 0;
+
+    if (leden.length) {
+      $("#team-titel").textContent = c.team.titel || "Het team";
+      $("#team-tekst").textContent = c.team.tekst || "";
+      $("#team-tekst").hidden = !c.team.tekst;
+
+      $("#team-leden").innerHTML = leden
+        .map(
+          (l, i) => `
+        <figure class="lid reveal">
+          <div class="frame frame--vierkant" data-label="Foto">
+            ${l.foto ? imgTag(l.foto, l.naam) : ""}
+          </div>
+          <figcaption>
+            <span class="lid__naam">${esc(l.naam)}</span>
+            ${l.functie ? `<span class="lid__functie">${esc(l.functie)}</span>` : ""}
+            ${
+              l.link
+                ? `<a class="lid__link" href="${esc(l.link)}" target="_blank" rel="noopener">
+                     ${esc(l.linkLabel || "Bekijk profiel")} <span aria-hidden="true">&rarr;</span>
+                   </a>`
+                : ""
+            }
+          </figcaption>
+        </figure>`
+        )
+        .join("");
+    }
+  }
+
+  /* Reviews.
+     Eerst de goedgekeurde reviews uit de database. Staan die er nog niet,
+     dan vallen we terug op de reviews die in de admin zijn ingetypt. */
+  const reviews = (window.__reviews && window.__reviews.length)
+    ? window.__reviews
+    : (c.reviews || []);
+
+  /* De sectie blijft altijd staan: ook zonder reviews moet iemand er een
+     kunnen schrijven. Alleen de uitleg wisselt. */
+  const leegmelding = $("#reviews-leeg");
+  if (leegmelding) leegmelding.hidden = reviews.length > 0;
 
   const sterren = (n) => {
     const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
@@ -215,6 +289,54 @@ function render(c) {
     })
     .join("");
 
+  /* Prijzen.
+     De hele sectie blijft weg tot je haar in de admin aanzet. Staat ze aan,
+     dan vervangt ze de aparte aanvraagpagina. */
+  const pr = c.prijzen || {};
+  const prSec = $("#prijzen-sectie");
+  const pakketten = (pr.pakketten || []).filter((x) => x && x.naam);
+  const prijzenAan = !!pr.zichtbaar && pakketten.length > 0;
+  window.__prijzenAan = prijzenAan;
+
+  if (prSec) {
+    prSec.hidden = !pr.zichtbaar || pakketten.length === 0;
+
+    if (!prSec.hidden) {
+      if (pr.titel) $("#prijzen-titel").textContent = pr.titel;
+      $("#prijzen-tekst").textContent = pr.tekst || "";
+      $("#prijzen-voet").textContent = pr.voetnoot || "";
+      $("#prijzen-voet").hidden = !pr.voetnoot;
+
+      $("#prijzen").innerHTML = pakketten
+        .map(
+          (t) => `
+        <article class="tarief ${t.uitgelicht ? "is-uit" : ""} reveal">
+          ${t.uitgelicht ? `<span class="tarief__vlag">Meest gekozen</span>` : ""}
+          <h3 class="tarief__naam">${esc(t.naam)}</h3>
+          <p class="tarief__prijs ${/\d/.test(t.prijs || "") ? "" : "tarief__prijs--tekst"}">
+            ${esc(t.prijs || "")}
+            ${t.eenheid ? `<span>${esc(t.eenheid)}</span>` : ""}
+          </p>
+          ${t.beschrijving ? `<p class="tarief__wat">${esc(t.beschrijving)}</p>` : ""}
+          <ul class="tarief__punten">
+            ${(t.punten || [])
+              .map(
+                (p) => `<li>
+                  <svg width="12" height="9" viewBox="0 0 13 10" aria-hidden="true">
+                    <path d="M1 5.2 4.4 8.6 12 1" stroke="currentColor" stroke-width="1.8"
+                          fill="none" stroke-linecap="square"/>
+                  </svg>${esc(p)}</li>`
+              )
+              .join("")}
+          </ul>
+          <button class="btn ${t.uitgelicht ? "btn--fill" : ""}"
+                  data-prijs-open="${esc(t.naam)}">${esc(pr.knoptekst || "Vraag ernaar")}</button>
+        </article>`
+        )
+        .join("");
+    }
+  }
+
   /* Opleidingen */
   $("#courses").innerHTML = (c.opleidingen || [])
     .map(
@@ -246,6 +368,42 @@ function render(c) {
   $("#footer-links").innerHTML = socials
     .map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`)
     .join("");
+
+  /* Eigen links onderaan */
+  $("#footer-eigen").innerHTML = (c.footer?.links || [])
+    .map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)
+    .join("");
+
+  $("#footer-ondertitel").textContent = c.footer?.ondertitel || "";
+
+  const kopS = $("#footer-kop-socials"), kopL = $("#footer-kop-links");
+  kopS.textContent = c.footer?.kopSocials || "";
+  kopL.textContent = c.footer?.kopLinks || "";
+  kopS.hidden = !socials.length;
+  kopL.hidden = !(c.footer?.links || []).length;
+  $("#footer-copyright").textContent = c.footer?.copyright ? "· " + c.footer.copyright : "";
+
+  /* De vaste links onderaan, elk apart aan of uit te zetten */
+  const vast = [];
+  if (!prijzenAan) vast.push(`<a href="aanvraag.html">Projectaanvraag</a>`);
+  if (c.footer?.toonReviewknop !== false) vast.push(`<a href="#" data-review-open>Schrijf een review</a>`);
+  if (c.footer?.toonAdminlink !== false) vast.push(`<a href="admin.html">Admin</a>`);
+  $("#footer-vast").innerHTML = vast.join("");
+
+  /* --------------------------------------------------------------------
+     Staan de prijzen aan, dan vervalt de aparte aanvraagpagina: bezoekers
+     kiezen dan eerst een pakket en vragen dat rechtstreeks aan.
+     -------------------------------------------------------------------- */
+  const cta = $("#nav-cta");
+  if (cta) {
+    if (prijzenAan) {
+      cta.href = "#prijzen-sectie";
+      cta.textContent = c.prijzen?.knoplabel || "Prijzen";
+    } else {
+      cta.href = "aanvraag.html";
+      cta.textContent = "Projectaanvraag";
+    }
+  }
 
   window.__content = c;
   observeReveals();
@@ -303,7 +461,7 @@ function render(c) {
     btn.textContent = origineel;
 
     if (error) {
-      say("Versturen lukte niet. Probeer opnieuw, of mail rechtstreeks.", "err");
+      say(dbFout(error, "Je bericht versturen"), "err");
       return;
     }
 
@@ -312,7 +470,248 @@ function render(c) {
   });
 })();
 
+/* Vertaalt een databasefout naar iets waar je wat mee kan. De volledige
+   fout gaat naar de console, zodat je die kan opzoeken als het nodig is. */
+function dbFout(error, wat) {
+  console.error("[JoppeDS] " + wat, error);
+
+  const code = error?.code || "";
+  const msg = (error?.message || "").toLowerCase();
+
+  if (code === "42P01" || msg.includes("does not exist") || msg.includes("schema cache")) {
+    return "Dit deel van de database bestaat nog niet. Voer supabase-setup.sql opnieuw uit in Supabase.";
+  }
+  if (code === "42501" || msg.includes("row-level security") || msg.includes("permission denied")) {
+    return "De database weigerde dit. Voer supabase-setup.sql opnieuw uit in Supabase.";
+  }
+  if (msg.includes("failed to fetch") || msg.includes("networkerror")) {
+    return "Geen verbinding met de server. Controleer je internetverbinding.";
+  }
+  return wat + " lukte niet: " + (error?.message || "onbekende fout");
+}
+
+/* --------------------------------------------------------------------------
+   Reviews ophalen en zelf laten schrijven
+   -------------------------------------------------------------------------- */
+
+/* De goedgekeurde reviews komen uit een aparte weergave in de database die
+   het e-mailadres van de schrijver niet meestuurt. */
+async function haalReviews() {
+  const sb = window.getSupabase();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from("reviews_publiek")
+      .select("*")
+      .order("volgorde", { ascending: true })
+      .order("created_at", { ascending: false });
+    return error || !data ? [] : data;
+  } catch (e) {
+    return [];
+  }
+}
+
+(function reviewFormulier() {
+  const dlg = $("#reviewdlg");
+  if (!dlg) return;
+
+  const form = $("#reviewform");
+  const note = $("#reviewnote");
+  const btn = $("#reviewverzend");
+  const tekst = $("#r-tekst");
+
+  const zeg = (msg, soort) => {
+    note.hidden = false;
+    note.textContent = msg;
+    note.className = "form__note form__note--" + soort;
+  };
+
+  /* Openen en sluiten */
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-review-open]")) {
+      e.preventDefault();
+      note.hidden = true;
+      dlg.showModal();
+    }
+    if (e.target.closest("[data-review-sluit]")) dlg.close();
+  });
+  dlg.addEventListener("mousedown", (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+
+  /* Tekstteller */
+  tekst.addEventListener("input", () => {
+    $("#r-teller").textContent = tekst.value.length;
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const gekozen = form.querySelector('input[name="sterren"]:checked');
+    const data = {
+      naam: $("#r-naam").value.trim(),
+      rol: $("#r-rol").value.trim() || null,
+      email: $("#r-email").value.trim() || null,
+      sterren: gekozen ? Number(gekozen.value) : 0,
+      tekst: tekst.value.trim(),
+      status: "wachtend",
+      bron: "site",
+      volgorde: 0
+    };
+
+    const mist = [];
+    if (!data.sterren) mist.push("een aantal sterren");
+    if (data.naam.length < 2) mist.push("je naam");
+    if (data.tekst.length < 10) mist.push("een review van minstens 10 tekens");
+    if (!$("#r-akkoord").checked) mist.push("je akkoord onderaan");
+
+    if (mist.length) { zeg("Vul nog aan: " + mist.join(", ") + ".", "err"); return; }
+
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email)) {
+      zeg("Dat e-mailadres klopt niet. Laat het gerust leeg als je liever niets opgeeft.", "err");
+      return;
+    }
+
+    /* Honeypot: alleen bots vullen dit veld in. */
+    if ($("#r-web").value) { zeg("Bedankt voor je review.", "ok"); form.reset(); return; }
+
+    const sb = window.getSupabase();
+    if (!sb) { zeg("Het formulier is nog niet gekoppeld aan de database.", "err"); return; }
+
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = "Versturen…";
+
+    const { error } = await sb.from("reviews").insert([data]);
+
+    btn.disabled = false;
+    btn.textContent = orig;
+
+    if (error) {
+      zeg(dbFout(error, "Je review versturen"), "err");
+      return;
+    }
+
+    form.reset();
+    $("#r-teller").textContent = "0";
+    zeg("Bedankt. Je review is verstuurd en verschijnt zodra Joppe hem nagelezen heeft.", "ok");
+  });
+})();
+
+/* --------------------------------------------------------------------------
+   Prijsaanvraag
+   --------------------------------------------------------------------------
+   Klik je bij een pakket op de knop, dan opent dit formulier met dat pakket
+   al ingevuld. De velden komen uit de admin, niet uit deze code.
+   -------------------------------------------------------------------------- */
+
+(function prijsFormulier() {
+  const dlg = $("#prijsdlg");
+  if (!dlg) return;
+
+  const form = $("#prijsform");
+  const note = $("#prijsnote");
+  const btn = $("#prijsverzend");
+  const doel = $("#prijsvelden");
+
+  const zeg = (msg, soort) => {
+    note.hidden = false;
+    note.textContent = msg;
+    note.className = "form__note form__note--" + soort;
+  };
+
+  const def = () => {
+    const d = JSON.parse(
+      JSON.stringify(window.__content?.formulieren?.prijsaanvraag || { groepen: [] })
+    );
+    /* De keuzelijst met pakketten vullen met wat er echt op de site staat */
+    const namen = (window.__content?.prijzen?.pakketten || [])
+      .filter((x) => x && x.naam)
+      .map((x) => x.naam);
+    (d.groepen || []).forEach((g) =>
+      (g.velden || []).forEach((v) => {
+        if (v.id === "pakket") v.opties = namen;
+      })
+    );
+    return d;
+  };
+
+  document.addEventListener("click", (e) => {
+    const open = e.target.closest("[data-prijs-open]");
+    if (open) {
+      e.preventDefault();
+      const d = def();
+
+      $("#prijs-kop").textContent = d.kop || "Vraag dit pakket aan";
+      $("#prijs-tekst").textContent = d.tekst || "";
+      $("#prijs-voet").textContent = d.voetnoot || "";
+      $("#prijsverzend").textContent = d.knop || "Aanvraag versturen";
+
+      window.bouwFormulier(doel, d, { prefix: "p-", nummers: false });
+
+      /* Het gekozen pakket vooraf invullen */
+      const keuze = doel.querySelector("#p-pakket");
+      if (keuze) keuze.value = open.dataset.prijsOpen;
+
+      note.hidden = true;
+      dlg.showModal();
+      const eerste = doel.querySelector("#p-naam");
+      if (eerste) eerste.focus();
+    }
+
+    if (e.target.closest("[data-prijs-sluit]")) dlg.close();
+  });
+
+  dlg.addEventListener("mousedown", (e) => { if (e.target === dlg) dlg.close(); });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = def();
+    const waarden = window.leesFormulier(doel, d, "p-");
+
+    const mist = window.controleerFormulier(waarden, d);
+    if (mist.length) { zeg("Vul nog aan: " + mist.join(", ") + ".", "err"); return; }
+
+    /* Honeypot: alleen bots vullen dit veld in. */
+    if ($("#p-web").value) { zeg(d.bedankt || "Bedankt.", "ok"); form.reset(); return; }
+
+    const sb = window.getSupabase();
+    if (!sb) { zeg("Het formulier is nog niet gekoppeld aan de database.", "err"); return; }
+
+    waarden.titel = waarden.pakket ? "Prijsaanvraag: " + waarden.pakket : "Prijsaanvraag";
+
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = "Versturen…";
+
+    const { data, error } = await sb.rpc("submit_open_request", { p_data: waarden });
+
+    btn.disabled = false;
+    btn.textContent = orig;
+
+    if (error) { zeg(dbFout(error, "Je aanvraag versturen"), "err"); return; }
+    if (!data?.ok) {
+      zeg(
+        data?.reden === "onvolledig"
+          ? "Er ontbreken nog verplichte velden."
+          : "Versturen lukte niet. Probeer het zo nog eens.",
+        "err"
+      );
+      return;
+    }
+
+    doel.querySelectorAll("input, textarea, select").forEach((el) => {
+      if (el.type === "checkbox") el.checked = false;
+      else el.value = "";
+    });
+    zeg((d.bedankt || "Bedankt.") + " Je referentie is " + data.referentie + ".", "ok");
+  });
+})();
+
 /* --------------------------------------------------------------------------
    Starten
    -------------------------------------------------------------------------- */
-window.loadContent().then(render);
+Promise.all([window.loadContent(), haalReviews()]).then(([inhoud, reviews]) => {
+  window.__reviews = reviews;
+  render(inhoud);
+});

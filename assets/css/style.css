@@ -47,6 +47,9 @@ body {
 
 img { max-width: 100%; display: block; }
 
+/* Lange links en woorden mogen nooit buiten hun kader vallen. */
+p, li, blockquote, td, .dl__val { overflow-wrap: break-word; }
+
 a { color: inherit; }
 
 ::selection { background: var(--accent); color: #14161c; }
@@ -152,6 +155,7 @@ a { color: inherit; }
   transition: border-color .3s var(--ease), background .3s var(--ease);
 }
 .topbar.is-stuck { border-bottom-color: var(--line); }
+.topbar__in { position: relative; }
 
 .topbar__in {
   display: flex;
@@ -204,15 +208,23 @@ a { color: inherit; }
 }
 .nav a:hover { color: var(--accent); }
 
-/* De aanvraagknop is geen gewone menulink: die moet opvallen. */
-.nav__cta {
-  color: var(--accent) !important;
+/* De aanvraagknop is geen gewone menulink. Hij erfde eerst de padding van
+   .nav a, waardoor de rand hem hoger maakte dan de rest en de balk scheef
+   oogde. Daarom eigen maten en een vaste regelhoogte. */
+.nav a.nav__cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 15px;
+  line-height: 1;
+  margin-left: 10px;
+  color: var(--accent);
+  font-weight: 700;
   border: 1px solid var(--accent);
-  margin-left: 6px;
+  border-radius: var(--r);
   transition: background .25s var(--ease), color .25s var(--ease);
 }
-.nav__cta:hover { background: var(--accent); color: #14161c !important; }
-.nav__kort { display: none; }
+.nav a.nav__cta:hover { background: var(--accent); color: #14161c; }
+
 
 .timecode {
   font-family: var(--mono);
@@ -230,6 +242,85 @@ a { color: inherit; }
   animation: rec 2.4s var(--ease) infinite;
 }
 @keyframes rec { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+
+/* --------------------------------------------------------------------------
+   Menu op telefoon en tablet
+   --------------------------------------------------------------------------
+   Vroeger verdwenen menu-items gewoon op smalle schermen. Nu schuift het
+   volledige menu open onder de balk, zodat elke sectie bereikbaar blijft.
+   -------------------------------------------------------------------------- */
+
+.topbar__rechts { display: flex; align-items: center; gap: 14px; }
+
+.hamburger {
+  display: none;
+  width: 42px; height: 42px;
+  padding: 11px 9px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color .2s var(--ease);
+}
+.hamburger:hover { border-color: var(--accent); }
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform .28s var(--ease), opacity .2s var(--ease), background .2s var(--ease);
+}
+.hamburger[aria-expanded="true"] span { background: var(--accent); }
+.hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+.hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+
+@media (max-width: 900px) {
+  .hamburger { display: flex; }
+
+  .nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 10px var(--gut) 22px;
+    /* Volledig ondoorzichtig: de pagina eronder mag niet doorschijnen,
+       anders is het menu slecht leesbaar boven de hero. */
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+    z-index: 5;
+
+    /* Dicht: onzichtbaar en niet aanklikbaar, maar wel netjes weg-animerend */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity .25s var(--ease), transform .25s var(--ease), visibility .25s;
+  }
+  .nav.is-open { opacity: 1; visibility: visible; transform: none; }
+
+  .nav a {
+    padding: 15px 4px;
+    font-size: 13px;
+    letter-spacing: .1em;
+    border-bottom: 1px solid var(--line);
+  }
+  .nav a:last-of-type { border-bottom: 0; }
+
+  .nav a.nav__cta {
+    margin: 16px 0 0;
+    justify-content: center;
+    padding: 15px;
+    font-size: 12px;
+  }
+}
 
 /* --------------------------------------------------------------------------
    Hero — de programmamonitor
@@ -466,6 +557,10 @@ a { color: inherit; }
 .frame--16x9 { aspect-ratio: 16 / 9; }
 .frame--portrait { aspect-ratio: 4 / 5; }
 
+/* Zonder deze grens vult de staande foto op tablet de volle breedte en wordt
+   ze meer dan duizend pixels hoog. */
+.about .frame--portrait { max-width: 400px; }
+
 /* --------------------------------------------------------------------------
    Projecten — het bronnenrack
    -------------------------------------------------------------------------- */
@@ -483,8 +578,13 @@ a { color: inherit; }
 .src:last-child { border-bottom: 1px solid var(--line); }
 .src:hover { border-top-color: var(--line-2); }
 
-@media (min-width: 820px) {
-  .src { grid-template-columns: 78px 1fr 340px; align-items: start; }
+/* Drie kolommen pas vanaf 900px. Op 820px bleef er na de bronkolom en de
+   afbeelding maar zo'n 240px over voor de tekst, en dat las niet. */
+@media (min-width: 900px) {
+  .src {
+    grid-template-columns: 70px minmax(270px, 1fr) minmax(250px, 320px);
+    align-items: start;
+  }
 }
 
 .src__id {
@@ -578,6 +678,90 @@ a { color: inherit; }
 .star { color: var(--line-2); flex: none; }
 .star.is-on { color: var(--accent); }
 
+/* Sterren kiezen in het reviewformulier.
+   De sterren staan in omgekeerde volgorde in de HTML en worden met
+   row-reverse teruggedraaid. Daardoor kan CSS alle sterren links van de
+   aangeklikte ster inkleuren, wat met de gewone volgorde niet lukt. */
+.sterkies {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 2px;
+}
+.sterkies input {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.sterkies label {
+  cursor: pointer;
+  color: var(--line-2);
+  line-height: 0;
+  padding: 3px;
+  border-radius: 3px;
+  transition: color .15s var(--ease), transform .15s var(--ease);
+}
+.sterkies label svg { width: 30px; height: 30px; display: block; }
+.sterkies input:checked ~ label,
+.sterkies label:hover,
+.sterkies label:hover ~ label { color: var(--accent); }
+.sterkies label:hover { transform: scale(1.08); }
+.sterkies input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Alleen zichtbaar voor schermlezers */
+.vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Een los aanvinkvakje buiten een .checks-rij */
+.check--los {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-2);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  transition: border-color .2s var(--ease);
+}
+.check--los:has(input:checked) { border-color: var(--accent); }
+.check--los input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 17px; height: 17px;
+  min-height: 0;
+  padding: 0; margin: 1px 0 0;
+  flex: none;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+}
+.check--los input::before {
+  content: "";
+  width: 9px; height: 5px;
+  border-left: 2px solid #14161c;
+  border-bottom: 2px solid #14161c;
+  transform: rotate(-45deg) translate(1px, -1px) scale(0);
+  transition: transform .18s var(--ease);
+}
+.check--los input:checked { background: var(--accent); border-color: var(--accent); }
+.check--los input:checked::before { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
+
 .quote blockquote {
   margin: 0;
   font-size: 16px;
@@ -600,6 +784,105 @@ a { color: inherit; }
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Prijzen
+   -------------------------------------------------------------------------- */
+
+.tarieven {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+  margin-top: 34px;
+}
+@media (min-width: 780px) { .tarieven { grid-template-columns: repeat(3, 1fr); } }
+
+.tarief {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 30px 26px 28px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.tarief:hover { border-color: var(--line-2); transform: translateY(-3px); }
+.tarief.is-uit { border-color: var(--accent); background: var(--panel-2); }
+
+.tarief__vlag {
+  position: absolute;
+  top: -1px; right: 20px;
+  transform: translateY(-50%);
+  background: var(--accent);
+  color: #14161c;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 100px;
+}
+
+.tarief__naam {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 400;
+}
+.tarief__prijs {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1;
+}
+.tarief__prijs--tekst { font-size: clamp(22px, 2.6vw, 27px); letter-spacing: -.02em; }
+.tarief__prijs span {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+}
+.tarief__wat { margin: 0; color: var(--muted); font-size: 15px; }
+
+.tarief__punten {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 11px;
+  flex: 1;
+}
+.tarief__punten li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.tarief__punten svg { color: var(--accent); flex: none; margin-top: 6px; }
+
+.tarief .btn { justify-content: center; margin-top: 6px; }
+
+.tarieven__voet {
+  margin: 22px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 62ch;
 }
 
 /* --------------------------------------------------------------------------
@@ -640,15 +923,16 @@ a { color: inherit; }
 @media (min-width: 560px) { .form__row { grid-template-columns: 1fr 1fr; } }
 
 .field { display: grid; gap: 8px; }
-.field label {
+.field > label {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.field input,
-.field textarea {
+.field > input,
+.field > textarea,
+.field > select {
   width: 100%;
   padding: 13px 15px;
   background: var(--bg-2);
@@ -656,14 +940,21 @@ a { color: inherit; }
   border-radius: var(--r);
   color: var(--text);
   font-family: var(--display);
-  font-size: 15px;
+  /* 16px is bewust: onder die grootte zoomt Safari op iPhone automatisch in
+     zodra je een veld aantikt, en dan staat de pagina daarna scheef. */
+  font-size: 16px;
+  min-height: 48px;
   transition: border-color .25s var(--ease), background .25s var(--ease);
 }
-.field textarea { resize: vertical; min-height: 148px; line-height: 1.6; }
-.field input:focus,
-.field textarea:focus { outline: none; border-color: var(--accent); background: var(--panel); }
-.field input::placeholder,
-.field textarea::placeholder { color: #5a6070; }
+.field > textarea { resize: vertical; min-height: 148px; line-height: 1.6; }
+
+/* Datumvelden houden op iOS hun eigen opmaak tenzij je die uitzet. */
+.field > input[type="date"] { -webkit-appearance: none; appearance: none; }
+
+.field > input:focus,
+.field > textarea:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.field > input::placeholder,
+.field > textarea::placeholder { color: #5a6070; }
 
 .form__note {
   font-family: var(--mono);
@@ -684,7 +975,11 @@ a { color: inherit; }
 
 .aanvraag { padding: 106px 0 clamp(60px, 9vw, 110px); }
 
-.monitor--slim { max-width: 660px; }
+/* Eén kolombreedte voor de hele pagina. Eerder was het codeblok 660px breed
+   en het formulier eronder de volle 1180px, wat er los uitzag. Een formulier
+   van 1180px breed leest bovendien slecht: je ogen moeten te ver. */
+.aanvraag .wrap { max-width: 780px; }
+
 .monitor--slim .lower { max-width: none; }
 .hero__title--sm { font-size: clamp(32px, 6vw, 56px); }
 
@@ -699,24 +994,24 @@ a { color: inherit; }
 }
 .codeform .btn { justify-content: center; }
 
-.aanvraagform { margin-top: 34px; gap: 0; }
+.aanvraagform { display: grid; gap: 14px; margin-top: 34px; }
 
 .fset {
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--panel);
-  padding: 8px clamp(18px, 3vw, 28px) clamp(22px, 3vw, 28px);
-  margin: 0 0 14px;
+  padding: clamp(20px, 3vw, 26px) clamp(18px, 3vw, 28px);
+  margin: 0;
   display: grid;
   gap: 16px;
 }
-.fset legend {
+
+.fset__kop {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 10px;
-  margin-left: -10px;
-  font-size: 18px;
+  margin: 0;
+  font-size: clamp(16px, 2.2vw, 19px);
   font-weight: 600;
   letter-spacing: -.02em;
 }
@@ -728,19 +1023,12 @@ a { color: inherit; }
   border: 1px solid var(--line-2);
   border-radius: 3px;
   padding: 3px 7px;
+  flex: none;
 }
 
 .verplicht { color: var(--accent); }
 
-.field select {
-  width: 100%;
-  padding: 13px 15px;
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  color: var(--text);
-  font-family: var(--display);
-  font-size: 15px;
+.field > select {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%238c92a3' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -749,8 +1037,10 @@ a { color: inherit; }
   cursor: pointer;
   transition: border-color .25s var(--ease);
 }
-.field select:focus { outline: none; border-color: var(--accent); }
-.field select option { background: var(--bg-2); color: var(--text); }
+.field > select:focus { outline: none; border-color: var(--accent); }
+.field > select option { background: var(--bg-2); color: var(--text); }
+
+.field--kort { max-width: 220px; }
 
 .field__hint {
   font-family: var(--mono);
@@ -760,35 +1050,62 @@ a { color: inherit; }
   margin: 2px 0 0;
 }
 
-/* Aanvinkbare labels */
+/* Aanvinkbare labels.
+   Alles staat hier expliciet omdat deze labels binnen een .field zitten en
+   anders de opmaak van een gewoon invoerveld zouden overnemen. */
 .checks { display: flex; flex-wrap: wrap; gap: 8px; }
-.check {
+
+.checks .check {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
+  gap: 9px;
+  padding: 10px 15px;
   border: 1px solid var(--line);
   border-radius: 100px;
   background: var(--bg-2);
   cursor: pointer;
-  font-size: 14px;
   user-select: none;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  line-height: 1;
   transition: border-color .2s var(--ease), background .2s var(--ease);
 }
-.check input {
+.checks .check:hover { border-color: var(--line-2); }
+.checks .check:has(input:checked) { border-color: var(--accent); background: rgba(255, 223, 89, .08); }
+.checks .check:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.checks .check input {
   appearance: none;
-  width: 13px; height: 13px;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
   margin: 0;
   flex: none;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: transparent;
   cursor: pointer;
+  display: grid;
+  place-content: center;
   transition: background .2s var(--ease), border-color .2s var(--ease);
 }
-.check input:checked { background: var(--accent); border-color: var(--accent); }
-.check:hover { border-color: var(--line-2); }
-.check:has(input:checked) { border-color: var(--accent); background: rgba(255, 223, 89, .07); }
-.check:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.checks .check input::before {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #14161c;
+  border-bottom: 2px solid #14161c;
+  transform: rotate(-45deg) translate(1px, -1px) scale(0);
+  transition: transform .18s var(--ease);
+}
+.checks .check input:checked { background: var(--accent); border-color: var(--accent); }
+.checks .check input:checked::before { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
 
 .aanvraag__submit { display: grid; gap: 10px; justify-items: start; margin-top: 8px; }
 
@@ -809,14 +1126,234 @@ a { color: inherit; }
   .codeform { max-width: none; }
   .aanvraag__submit { justify-items: stretch; }
   .aanvraag__submit .btn { justify-content: center; }
-  .fset legend { font-size: 16px; }
 }
+
+
+/* --------------------------------------------------------------------------
+   Kleine knop en het detailvenster
+   Worden gebruikt op de hoofdpagina (reviewformulier) en in de admin.
+   -------------------------------------------------------------------------- */
+
+.mini {
+  padding: 7px 13px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.mini:hover { color: var(--accent); border-color: var(--accent); }
+.mini--danger:hover { color: var(--red); border-color: var(--red); }
+
+/* ---------- Detailvenster ---------- */
+
+dialog.sheet {
+  width: min(680px, calc(100vw - 24px));
+  max-height: 88vh;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--text);
+  overflow: auto;
+}
+dialog.sheet::backdrop { background: rgba(10, 11, 15, .74); }
+
+.sheet__head {
+  position: sticky;
+  top: 0;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  z-index: 2;
+}
+.sheet__head h2 { margin: 0 0 6px; font-size: 20px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.sheet__body { padding: 20px 22px 26px; }
+.sheet__foot {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+  padding: 14px 22px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dl { display: grid; margin: 0 0 22px; }
+.dl__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 560px) {
+  .dl__row { grid-template-columns: 168px 1fr; gap: 16px; align-items: baseline; }
+}
+.dl__lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dl__val { overflow-wrap: anywhere; white-space: pre-wrap; }
+.dl__val a { color: var(--accent); }
+
+.grid2 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+
+.item {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--bg-2);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.item__nr {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.item__tools { display: flex; gap: 6px; }
+
+/* ---------- Opslaan ---------- */
+
+.savebar {
+  position: sticky;
+  bottom: 0;
+  margin-top: 22px;
+  padding: 16px 0;
+  background: linear-gradient(180deg, transparent, var(--bg) 32%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.savebar .status { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.savebar .status.ok { color: var(--green); }
+.savebar .status.err { color: var(--red); }
+
+
+/* --------------------------------------------------------------------------
+   Team
+   -------------------------------------------------------------------------- */
+
+.crew {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 14px;
+}
+@media (min-width: 700px)  { .crew { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1000px) { .crew { grid-template-columns: repeat(4, 1fr); } }
+
+.lid { margin: 0; }
+.lid .frame { transition: transform .35s var(--ease); }
+.lid:hover .frame { transform: translateY(-4px); }
+
+.frame--vierkant { aspect-ratio: 1 / 1; }
+
+.lid figcaption { display: flex; flex-direction: column; gap: 3px; padding-top: 14px; }
+.lid__naam { font-weight: 600; letter-spacing: -.01em; font-size: 16px; }
+.lid__functie {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lid__link {
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  gap: 7px;
+  transition: gap .25s var(--ease);
+}
+.lid__link:hover { gap: 11px; }
 
 /* --------------------------------------------------------------------------
    Footer
    -------------------------------------------------------------------------- */
 
-.footer { border-top: 1px solid var(--line); padding: 34px 0; }
+.footer { border-top: 1px solid var(--line); padding: 40px 0 30px; }
+
+.footer__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+.footer__naam { font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+.footer__slogan {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--accent);
+  margin-top: 6px;
+}
+.footer__kolommen { display: flex; gap: 48px; flex-wrap: wrap; }
+.footer__kolom { display: flex; flex-direction: column; gap: 12px; }
+.footer__kolommen .footer__links { flex-direction: column; gap: 10px; }
+.footer__kop {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.footer__onder {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 22px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.footer__onder a { color: var(--muted); text-decoration: none; transition: color .2s var(--ease); }
+.footer__onder a:hover { color: var(--accent); }
+
+@media (max-width: 620px) {
+  .footer__top { flex-direction: column; gap: 24px; }
+  .footer__kolommen { gap: 28px; }
+  .footer__onder { flex-direction: column; gap: 12px; }
+}
 .footer__in {
   display: flex;
   flex-wrap: wrap;
@@ -848,23 +1385,14 @@ a { color: inherit; }
    gewoon door te scrollen. */
 @media (max-width: 900px) {
   .timecode { display: none; }
-  .topbar__in { justify-content: space-between; }
+  .topbar__in { justify-content: space-between; position: relative; }
 }
 
-@media (max-width: 780px) {
-  .nav a[href="#opleidingen"] { display: none; }
-}
 
-@media (max-width: 620px) {
-  .nav a[href="#over"],
-  .nav a[href="#projecten"] { display: none; }
-  .nav__lang { display: none; }
-  .nav__kort { display: inline; }
-}
 
 /* Op telefoon staat de afbeelding van een project bovenaan, dan de tekst.
    Zo zie je meteen waar het over gaat bij het scrollen. */
-@media (max-width: 819px) {
+@media (max-width: 899px) {
   .src { gap: 18px; }
   .src .frame { order: 1; }
   .src__id { order: 2; padding-top: 0; }

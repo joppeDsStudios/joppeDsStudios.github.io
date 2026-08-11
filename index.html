@@ -4,12 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JoppeDS Studio's — Create. Analyze. Improve. Repeat.</title>
-<meta name="description" content="JoppeDS Studio's. All in one content creator!.">
+<meta name="description" content="JoppeDS Studio's. All in one content creator!">
 <meta name="theme-color" content="#14161c">
 
-<meta property="og:title" content="JoppeDS Studio's">
-<meta property="og:description" content="Create. Analyze. Improve. Repeat.">
+
+<!-- Zo ziet je link eruit als je hem deelt in WhatsApp, Discord, of op sociale media -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JoppeDS Studio's — Create. Analyze. Improve. Repeat.">
+<meta name="twitter:description" content="Video, livestreams en thumbnails. Van eerste opname tot laatste render.">
+<meta name="twitter:image" content="https://joppedsstudios.github.io/assets/img/og-image.png">
+
+<!-- Wat er verschijnt als je de link deelt in WhatsApp, Discord, Instagram, ... -->
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="JoppeDS Studio's">
+<meta property="og:locale" content="nl_BE">
+<meta property="og:title" content="JoppeDS Studio's — Create. Analyze. Improve. Repeat.">
+<meta property="og:description" content="Video, livestreams en thumbnails. Van eerste opname tot laatste render.">
+<meta property="og:url" content="https://joppeds.github.io/index.html">
+<meta property="og:image" content="https://joppeds.github.io/assets/img/deelafbeelding.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JoppeDS Studio's — Create. Analyze. Improve. Repeat.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JoppeDS Studio's — Create. Analyze. Improve. Repeat.">
+<meta name="twitter:description" content="Video, livestreams en thumbnails. Van eerste opname tot laatste render.">
+<meta name="twitter:image" content="https://joppeds.github.io/assets/img/deelafbeelding.png">
 
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,20 +49,25 @@
       <span data-bind="hero.studio">JoppeDS Studio's</span>
     </a>
 
-    <nav class="nav" aria-label="Hoofdmenu">
+    <nav class="nav" id="nav" aria-label="Hoofdmenu">
       <a href="#over">Over</a>
+      <a href="#team" id="nav-team" hidden>Team</a>
       <a href="#projecten">Projecten</a>
       <a href="#opleidingen">Opleidingen</a>
       <a href="#contact">Contact</a>
-      <a class="nav__cta" href="aanvraag.html">
-        <span class="nav__lang">Projectaanvraag</span>
-        <span class="nav__kort">Aanvraag</span>
-      </a>
+      <a class="nav__cta" href="aanvraag.html" id="nav-cta">Projectaanvraag</a>
     </nav>
 
-    <div class="timecode" aria-hidden="true">
-      <span class="timecode__dot"></span>
-      <span id="tc">00:00:00:00</span>
+    <div class="topbar__rechts">
+      <div class="timecode" aria-hidden="true">
+        <span class="timecode__dot"></span>
+        <span id="tc">00:00:00:00</span>
+      </div>
+
+      <button class="hamburger" id="menuknop" type="button"
+              aria-label="Menu openen" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </header>
@@ -102,6 +126,19 @@
     </div>
   </section>
 
+
+  <!-- ======================= Team ======================= -->
+  <section class="section section--line" id="team" hidden>
+    <div class="wrap">
+      <div class="reveal">
+        <p class="eyebrow">Wie er meewerkt</p>
+        <h2 class="h2" id="team-titel">Het team</h2>
+        <p class="lead" id="team-tekst"></p>
+      </div>
+      <div class="crew" id="team-leden"></div>
+    </div>
+  </section>
+
   <!-- ======================= Projecten ======================= -->
   <section class="section section--line" id="projecten">
     <div class="wrap">
@@ -115,13 +152,32 @@
   </section>
 
   <!-- ======================= Reviews ======================= -->
-  <section class="section section--line" id="reviews-sectie" hidden>
+  <section class="section section--line" id="reviews-sectie">
     <div class="wrap">
       <div class="reveal">
         <p class="eyebrow">Wat anderen zeggen</p>
         <h2 class="h2">Reviews</h2>
+        <p class="lead" id="reviews-leeg" hidden>
+          Er staan hier nog geen reviews. Werkten we samen? Dan hoor ik graag wat je ervan vond.
+        </p>
       </div>
       <div class="quotes" id="reviews"></div>
+      <div class="reveal" style="margin-top:26px">
+        <button class="btn" data-review-open>Schrijf een review</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= Prijzen ======================= -->
+  <section class="section section--line" id="prijzen-sectie" hidden>
+    <div class="wrap">
+      <div class="reveal">
+        <p class="eyebrow">Tarieven</p>
+        <h2 class="h2" id="prijzen-titel">Wat het kost</h2>
+        <p class="lead" id="prijzen-tekst"></p>
+      </div>
+      <div class="tarieven" id="prijzen"></div>
+      <p class="tarieven__voet reveal" id="prijzen-voet"></p>
     </div>
   </section>
 
@@ -185,18 +241,134 @@
 
 <!-- ======================= Footer ======================= -->
 <footer class="footer">
-  <div class="wrap footer__in">
-    <span>© <span id="jaar"></span> <span data-bind="footer.tekst">JoppeDS Studio's</span></span>
-    <div class="footer__links" id="footer-links"></div>
-    <div class="footer__links">
-      <a href="admin.html">Admin</a>
+  <div class="wrap">
+    <div class="footer__top">
+      <div>
+        <div class="footer__naam" data-bind="footer.tekst">JoppeDS Studio's</div>
+        <div class="footer__slogan" id="footer-ondertitel"></div>
+      </div>
+      <div class="footer__kolommen">
+        <div class="footer__kolom">
+          <span class="footer__kop" id="footer-kop-socials"></span>
+          <div class="footer__links" id="footer-links"></div>
+        </div>
+        <div class="footer__kolom">
+          <span class="footer__kop" id="footer-kop-links"></span>
+          <div class="footer__links" id="footer-eigen"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer__onder">
+      <span>© <span id="jaar"></span> <span data-bind="footer.tekst">JoppeDS Studio's</span>
+        <span id="footer-copyright"></span></span>
+      <div class="footer__links" id="footer-vast"></div>
     </div>
   </div>
 </footer>
 
+<!-- ======================= Prijsaanvraag ======================= -->
+<dialog class="sheet" id="prijsdlg">
+  <div class="sheet__head">
+    <div>
+      <h2 id="prijs-kop">Vraag dit pakket aan</h2>
+      <p class="field__hint" id="prijs-tekst"></p>
+    </div>
+    <button class="mini" type="button" data-prijs-sluit>Sluiten</button>
+  </div>
+
+  <form class="sheet__body form" id="prijsform" novalidate>
+    <div id="prijsvelden"></div>
+
+    <input type="text" id="p-web" tabindex="-1" autocomplete="off" aria-hidden="true"
+           style="position:absolute;left:-9999px;opacity:0;height:0;width:0">
+
+    <div class="form__note" id="prijsnote" hidden></div>
+
+    <div class="aanvraag__submit">
+      <button class="btn btn--fill" type="submit" id="prijsverzend">Aanvraag versturen</button>
+      <p class="field__hint" id="prijs-voet"></p>
+    </div>
+  </form>
+</dialog>
+
+<!-- ======================= Reviewformulier ======================= -->
+<dialog class="sheet" id="reviewdlg">
+  <div class="sheet__head">
+    <div>
+      <h2>Schrijf een review</h2>
+      <p class="field__hint">Je review verschijnt pas op de site nadat Joppe hem nagelezen heeft.</p>
+    </div>
+    <button class="mini" type="button" data-review-sluit>Sluiten</button>
+  </div>
+
+  <form class="sheet__body form" id="reviewform" novalidate>
+    <div class="field">
+      <label>Hoeveel sterren geef je? <span class="verplicht">*</span></label>
+      <div class="sterkies" id="r-sterren" role="radiogroup" aria-label="Beoordeling in sterren">
+        <input type="radio" name="sterren" id="ster5" value="5">
+        <label for="ster5" title="5 sterren"><span class="vh">5 sterren</span>
+          <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+        <input type="radio" name="sterren" id="ster4" value="4">
+        <label for="ster4" title="4 sterren"><span class="vh">4 sterren</span>
+          <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+        <input type="radio" name="sterren" id="ster3" value="3">
+        <label for="ster3" title="3 sterren"><span class="vh">3 sterren</span>
+          <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+        <input type="radio" name="sterren" id="ster2" value="2">
+        <label for="ster2" title="2 sterren"><span class="vh">2 sterren</span>
+          <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+        <input type="radio" name="sterren" id="ster1" value="1">
+        <label for="ster1" title="1 ster"><span class="vh">1 ster</span>
+          <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="r-tekst">Je review <span class="verplicht">*</span></label>
+      <textarea id="r-tekst" rows="5" maxlength="1500"
+        placeholder="Waarmee heeft Joppe je geholpen, en hoe verliep de samenwerking?"></textarea>
+      <p class="field__hint"><span id="r-teller">0</span> / 1500 tekens</p>
+    </div>
+
+    <div class="form__row">
+      <div class="field">
+        <label for="r-naam">Je naam <span class="verplicht">*</span></label>
+        <input id="r-naam" type="text" maxlength="80" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="r-rol">Bedrijf, kanaal of functie</label>
+        <input id="r-rol" type="text" maxlength="100" placeholder="Optioneel">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="r-email">Je e-mailadres</label>
+      <input id="r-email" type="email" maxlength="160" autocomplete="email" placeholder="Optioneel">
+      <p class="field__hint">
+        Komt nooit op de site. Joppe gebruikt het alleen om je te bereiken bij een vraag.
+      </p>
+    </div>
+
+    <label class="check check--los">
+      <input type="checkbox" id="r-akkoord">
+      <span>Ik ga ermee akkoord dat mijn naam en review op de site getoond worden.</span>
+    </label>
+
+    <input type="text" id="r-web" tabindex="-1" autocomplete="off" aria-hidden="true"
+           style="position:absolute;left:-9999px;opacity:0;height:0;width:0">
+
+    <div class="form__note" id="reviewnote" hidden></div>
+
+    <div>
+      <button class="btn btn--fill" type="submit" id="reviewverzend">Review versturen</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/content.js"></script>
+<script src="assets/js/formulier.js"></script>
 <script src="assets/js/main.js"></script>
 <script src="assets/js/analytics.js"></script>
 </body>

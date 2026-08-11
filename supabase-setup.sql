@@ -86,15 +86,46 @@ create table if not exists public.project_requests (
   titel       text not null,
   data        jsonb not null default '{}'::jsonb,
   status      text not null default 'nieuw',
+  soort       text not null default 'projectaanvraag',
   notitie     text
 );
+
+-- Voor wie deze tabel al had staan van een vorige keer
+alter table public.project_requests
+  add column if not exists soort text not null default 'projectaanvraag';
 
 create index if not exists project_requests_created_at_idx
   on public.project_requests (created_at desc);
 
 
+-- ---------------------------------------------------------------------------
+--  6. Reviews
+--  ---------------------------------------------------------------------------
+--  Bezoekers kunnen zelf een review schrijven. Die komt binnen met status
+--  'wachtend' en verschijnt pas op de site nadat jij hem goedkeurt.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.reviews (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  naam        text not null,
+  rol         text,
+  email       text,
+  sterren     smallint not null,
+  tekst       text not null,
+  status      text not null default 'wachtend',
+  volgorde    integer not null default 0,
+  bron        text not null default 'site',
+  constraint reviews_sterren_bereik check (sterren between 1 and 5),
+  constraint reviews_status_geldig  check (status in ('wachtend', 'zichtbaar', 'verborgen'))
+);
+
+create index if not exists reviews_status_idx
+  on public.reviews (status, volgorde, created_at desc);
+
+
 -- ===========================================================================
---  6. Beveiliging: Row Level Security
+--  7. Beveiliging: Row Level Security
 --  ---------------------------------------------------------------------------
 --  Deze regels draaien op de servers van Supabase. Wie de JavaScript van de
 --  site leest, ziet enkel de publieke anon key -- en die geeft precies zoveel
@@ -106,6 +137,7 @@ alter table public.site_content     enable row level security;
 alter table public.pageviews        enable row level security;
 alter table public.project_codes    enable row level security;
 alter table public.project_requests enable row level security;
+alter table public.reviews          enable row level security;
 
 
 -- ---- Berichten ------------------------------------------------------------
@@ -183,8 +215,50 @@ create policy "alleen ingelogd beheert aanvragen"
   on public.project_requests for all to authenticated using (true) with check (true);
 
 
+-- ---- Reviews --------------------------------------------------------------
+
+-- Iedereen mag een review insturen, maar altijd als 'wachtend'. Zo kan
+-- niemand zichzelf rechtstreeks op de site zetten.
+drop policy if exists "iedereen mag een review insturen" on public.reviews;
+create policy "iedereen mag een review insturen"
+  on public.reviews for insert to anon, authenticated
+  with check (
+    status = 'wachtend'
+    and bron = 'site'
+    and volgorde = 0
+    and length(btrim(naam)) between 2 and 80
+    and (rol is null or length(rol) <= 100)
+    and (email is null or length(email) <= 160)
+    and sterren between 1 and 5
+    and length(btrim(tekst)) between 10 and 1500
+  );
+
+drop policy if exists "alleen ingelogd beheert reviews" on public.reviews;
+create policy "alleen ingelogd beheert reviews"
+  on public.reviews for all to authenticated using (true) with check (true);
+
+-- Let op: er is bewust GEEN leesregel voor anon op de tabel zelf.
+-- Bezoekers lezen de reviews via onderstaande weergave, die alleen de
+-- goedgekeurde rijen toont en het e-mailadres van de schrijver weglaat.
+-- Zonder deze tussenstap zou het e-mailadres van elke reviewer publiek
+-- opvraagbaar zijn, want beveiligingsregels werken per rij, niet per kolom.
+
+create or replace view public.reviews_publiek as
+  select id, created_at, naam, rol, sterren, tekst, volgorde
+    from public.reviews
+   where status = 'zichtbaar';
+
+grant select on public.reviews_publiek to anon, authenticated;
+
+-- Supabase geeft nieuwe tabellen normaal automatisch de juiste rechten, maar
+-- dat gebeurt alleen als de standaardinstellingen nog intact zijn. Deze twee
+-- regels maken het expliciet, zodat het insturen van een review zeker werkt.
+grant insert on public.reviews to anon, authenticated;
+grant select, update, delete on public.reviews to authenticated;
+
+
 -- ===========================================================================
---  7. Functies voor de aanvraagpagina
+--  8. Functies voor de aanvraagpagina
 --  ---------------------------------------------------------------------------
 --  "security definer" betekent dat deze functies met verhoogde rechten
 --  draaien. Ze geven enkel terug wat hieronder staat -- nooit de codetabel
@@ -275,11 +349,53 @@ end;
 $$;
 
 
+-- Een prijsaanvraag heeft geen code nodig: die komt van je eigen prijzenpagina.
+-- De controle op inhoud en lengte gebeurt hier, zodat een bezoeker niets
+-- rechtstreeks in de tabel kan schrijven.
+create or replace function public.submit_open_request(p_data jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare ref text;
+begin
+  if coalesce(length(btrim(p_data->>'naam')), 0) < 2
+     or coalesce(length(btrim(p_data->>'email')), 0) < 5
+     or (p_data->>'email') not like '%_@_%._%'
+     or coalesce(length(btrim(p_data->>'beschrijving')), 0) < 10 then
+    return jsonb_build_object('ok', false, 'reden', 'onvolledig');
+  end if;
+
+  if length(p_data::text) > 30000 then
+    return jsonb_build_object('ok', false, 'reden', 'tegroot');
+  end if;
+
+  ref := 'PA-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+
+  insert into project_requests (referentie, code, naam, email, titel, data, soort)
+  values (
+    ref,
+    null,
+    btrim(p_data->>'naam'),
+    btrim(p_data->>'email'),
+    coalesce(nullif(btrim(p_data->>'titel'), ''), 'Prijsaanvraag'),
+    p_data,
+    'prijsaanvraag'
+  );
+
+  return jsonb_build_object('ok', true, 'referentie', ref);
+end;
+$$;
+
+
 -- Wie mag deze functies aanroepen
 revoke all on function public.check_code(text)             from public;
 revoke all on function public.submit_request(text, jsonb)  from public;
+revoke all on function public.submit_open_request(jsonb)   from public;
 grant execute on function public.check_code(text)            to anon, authenticated;
 grant execute on function public.submit_request(text, jsonb) to anon, authenticated;
+grant execute on function public.submit_open_request(jsonb)  to anon, authenticated;
 
 
 -- Zeg tegen de API-laag dat ze de nieuwe tabellen en functies moet oppikken.

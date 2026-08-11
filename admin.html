@@ -44,6 +44,7 @@
       <div class="tabs">
         <button class="tab is-on" data-tab="berichten">Berichten <span id="badge"></span></button>
         <button class="tab" data-tab="aanvragen">Aanvragen <span id="badge-aanvragen"></span></button>
+        <button class="tab" data-tab="reviews">Reviews <span id="badge-reviews"></span></button>
         <button class="tab" data-tab="bezoekers">Bezoekers</button>
         <button class="tab" data-tab="inhoud">Inhoud</button>
       </div>
@@ -57,8 +58,15 @@
 
   <div class="admin-wrap">
 
+    <div class="waarschuwing" id="installwaarschuwing" hidden></div>
+
     <!-- ---------- Berichten ---------- -->
     <section class="tabpane" id="pane-berichten">
+      <div class="zoek">
+        <svg class="zoek__icoon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="search" id="zoek-berichten" placeholder="Zoek op naam, e-mailadres of inhoud…" autocomplete="off">
+        <button class="zoek__wis" type="button" data-wis="zoek-berichten" hidden aria-label="Zoekopdracht wissen">&times;</button>
+      </div>
       <div id="msglist"></div>
     </section>
 
@@ -122,7 +130,32 @@
         <button class="mini" data-status="afgewezen">Afgewezen</button>
       </div>
 
+      <div class="zoek">
+        <svg class="zoek__icoon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="search" id="zoek-aanvragen" placeholder="Zoek op titel, naam, referentie of inhoud…" autocomplete="off">
+        <button class="zoek__wis" type="button" data-wis="zoek-aanvragen" hidden aria-label="Zoekopdracht wissen">&times;</button>
+      </div>
       <div id="aanvraaglijst"></div>
+    </section>
+
+    <!-- ---------- Reviews ---------- -->
+    <section class="tabpane" id="pane-reviews" hidden>
+      <div id="reviewoverzet"></div>
+
+      <div class="filters" id="reviewfilter">
+        <button class="mini is-on" data-rstatus="wachtend">Wacht op nalezing</button>
+        <button class="mini" data-rstatus="zichtbaar">Op de site</button>
+        <button class="mini" data-rstatus="verborgen">Verborgen</button>
+        <button class="mini" data-rstatus="">Alles</button>
+        <button class="mini" id="reviewnieuw">+ Zelf toevoegen</button>
+      </div>
+
+      <div class="zoek">
+        <svg class="zoek__icoon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="search" id="zoek-reviews" placeholder="Zoek op naam, bedrijf of tekst…" autocomplete="off">
+        <button class="zoek__wis" type="button" data-wis="zoek-reviews" hidden aria-label="Zoekopdracht wissen">&times;</button>
+      </div>
+      <div id="reviewlijst"></div>
     </section>
 
     <!-- ---------- Bezoekers ---------- -->
@@ -139,6 +172,24 @@
     <section class="tabpane" id="pane-inhoud" hidden>
       <div id="editor"></div>
 
+      <details class="group" data-g="backup">
+        <summary><span>Reservekopie</span><span class="group__sub">Downloaden en terugzetten</span></summary>
+        <div class="group__body">
+          <p class="hint">
+            Sla af en toe een kopie op van al je teksten, projecten en prijzen.
+            Gaat er ooit iets mis, dan zet je alles in één klik terug.
+            Berichten, aanvragen en reviews zitten hier niet in; die staan veilig
+            in de database.
+          </p>
+          <div class="rev__acts">
+            <button class="mini" id="backup-download">Kopie downloaden</button>
+            <button class="mini" id="backup-kies">Kopie terugzetten</button>
+            <input type="file" id="backup-bestand" accept="application/json" hidden>
+          </div>
+          <div class="form__note" id="backup-note" hidden></div>
+        </div>
+      </details>
+
       <div class="savebar">
         <button class="btn btn--fill" id="save">Wijzigingen opslaan</button>
         <button class="mini" id="reload">Opnieuw laden</button>
@@ -150,6 +201,7 @@
 </div>
 
 <dialog class="sheet" id="detail"></dialog>
+<dialog class="sheet" id="reviewbewerk"></dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/js/config.js"></script>

@@ -14,6 +14,24 @@ const sb = window.getSupabase();
 $("#jaar").textContent = new Date().getFullYear();
 
 let actieveCode = null;
+let inhoud = null;
+
+const formDef = () =>
+  JSON.parse(JSON.stringify(
+    inhoud?.formulieren?.projectaanvraag ||
+    window.DEFAULT_CONTENT.formulieren.projectaanvraag
+  ));
+
+/* Inhoud ophalen. Staan de prijzen aan, dan verloopt aanvragen via de
+   pakketten op de website en heeft deze pagina geen functie meer. */
+window.loadContent().then((c) => {
+  inhoud = c;
+  const pakketten = (c.prijzen?.pakketten || []).filter((x) => x && x.naam);
+  if (c.prijzen?.zichtbaar && pakketten.length) {
+    $("#stap-code").hidden = true;
+    $("#stap-prijzen").hidden = false;
+  }
+});
 
 /* --------------------------------------------------------------------------
    Meldingen
@@ -122,10 +140,20 @@ $("#codeform").addEventListener("submit", async (e) => {
 
   actieveCode = code;
   $("#codelabel").textContent = data.label ? "— " + data.label : "";
+
+  /* Het formulier wordt opgebouwd uit de beschrijving in de admin */
+  const def = formDef();
+  $("#form-kop").textContent = def.kop || "Vertel me over je project";
+  $("#form-tekst").textContent = def.tekst || "";
+  $("#form-voet").textContent = def.voetnoot || "";
+  $("#verzend").textContent = def.knop || "Aanvraag indienen";
+  window.bouwFormulier($("#formvelden"), def, { prefix: "f-", nummers: true });
+
   $("#stap-code").hidden = true;
   $("#stap-form").hidden = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
-  $("#f-naam").focus();
+  const eerste = $("#f-naam");
+  if (eerste) eerste.focus();
 });
 
 /* --------------------------------------------------------------------------
@@ -139,38 +167,15 @@ $("#projectform").addEventListener("submit", async (e) => {
   e.preventDefault();
   const note = $("#formnote");
   const btn = $("#verzend");
+  const def = formDef();
 
-  const payload = {
-    naam: $("#f-naam").value.trim(),
-    email: $("#f-email").value.trim(),
-    bedrijf: $("#f-bedrijf").value.trim(),
-    telefoon: $("#f-tel").value.trim(),
-    titel: $("#f-titel").value.trim(),
-    beschrijving: $("#f-beschrijving").value.trim(),
-    doel: $("#f-doel").value,
-    formaat: $("#f-formaat").value,
-    lengte: $("#f-lengte").value.trim(),
-    platform: vinkjes("f-platform"),
-    aantal: $("#f-aantal").value,
-    stijl: vinkjes("f-stijl"),
-    referenties: $("#f-referenties").value.trim(),
-    budget: $("#f-budget").value,
-    deadline: $("#f-deadline").value,
-    drive: $("#f-drive").value.trim(),
-    assets: $("#f-assets").value.trim(),
-    extra: $("#f-extra").value.trim()
-  };
+  const payload = window.leesFormulier($("#formvelden"), def, "f-");
 
-  /* Controle in de browser, zodat je niet hoeft te wachten op de server.
+  /* Eerst hier controleren, zodat je niet op de server moet wachten.
      De database controleert het daarna nog een keer. */
-  const ontbreekt = [];
-  if (payload.naam.length < 2) ontbreekt.push("je naam");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(payload.email)) ontbreekt.push("een geldig e-mailadres");
-  if (payload.titel.length < 2) ontbreekt.push("een werktitel");
-  if (payload.beschrijving.length < 10) ontbreekt.push("een beschrijving van minstens 10 tekens");
-
-  if (ontbreekt.length) {
-    melding(note, "Vul nog aan: " + ontbreekt.join(", ") + ".", "err");
+  const mist = window.controleerFormulier(payload, def);
+  if (mist.length) {
+    melding(note, "Vul nog aan: " + mist.join(", ") + ".", "err");
     note.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
@@ -189,7 +194,7 @@ $("#projectform").addEventListener("submit", async (e) => {
   });
 
   btn.disabled = false;
-  btn.textContent = "Aanvraag indienen";
+  btn.textContent = def.knop || "Aanvraag indienen";
 
   if (error) {
     melding(note, fout(error, "Indienen"), "err");
@@ -201,6 +206,7 @@ $("#projectform").addEventListener("submit", async (e) => {
   }
 
   $("#ref").textContent = data.referentie;
+  if (def.bedankt) $("#klaar-tekst").textContent = def.bedankt;
   $("#stap-form").hidden = true;
   $("#stap-klaar").hidden = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -208,7 +214,8 @@ $("#projectform").addEventListener("submit", async (e) => {
 
 /* Waarschuw als je wegklikt met een halfingevuld formulier */
 window.addEventListener("beforeunload", (e) => {
-  if (!$("#stap-form").hidden && $("#f-titel").value.trim()) {
+  const titel = $("#f-titel");
+  if (!$("#stap-form").hidden && titel && titel.value.trim()) {
     e.preventDefault();
     e.returnValue = "";
   }

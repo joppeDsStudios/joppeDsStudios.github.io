@@ -35,6 +35,12 @@ window.DEFAULT_CONTENT = {
     foto: ""
   },
 
+  team: {
+    titel: "Het team",
+    tekst: "De mensen achter JoppeDS Studio's.",
+    leden: []
+  },
+
   projecten: [
     {
       titel: "YouTube Kanaal",
@@ -103,6 +109,45 @@ window.DEFAULT_CONTENT = {
     }
   ],
 
+  prijzen: {
+    zichtbaar: false,
+    titel: "Wat het kost",
+    tekst:
+      "Elk project is anders, dus dit zijn richtprijzen. Vertel me wat je in gedachten hebt en ik maak een voorstel op maat.",
+    voetnoot: "Alle prijzen zijn richtprijzen. Voor scholen en verenigingen kijk ik graag wat mogelijk is.",
+    pakketten: [
+      {
+        naam: "Short-form",
+        prijs: "€ 75",
+        eenheid: "per video",
+        beschrijving: "Een korte video voor Shorts, Reels of TikTok.",
+        punten: ["Tot 60 seconden", "Montage en ondertiteling", "Eén ronde feedback"],
+        uitgelicht: false
+      },
+      {
+        naam: "Long-form",
+        prijs: "€ 250",
+        eenheid: "vanaf",
+        beschrijving: "Een volwaardige video voor YouTube of je website.",
+        punten: [
+          "Tot 10 minuten",
+          "Kleurcorrectie en geluidsmix",
+          "Thumbnail inbegrepen",
+          "Twee rondes feedback"
+        ],
+        uitgelicht: true
+      },
+      {
+        naam: "Livestream",
+        prijs: "Op aanvraag",
+        eenheid: "",
+        beschrijving: "Multi-cam livestream met overlays en green screen.",
+        punten: ["Meerdere camera's", "Live overlays en widgets", "Opname achteraf"],
+        uitgelicht: false
+      }
+    ]
+  },
+
   opleidingen: [
     { titel: "Masterclass Audio", instituut: "Quindo" },
     { titel: "Masterclass Live Streaming", instituut: "Quindo" },
@@ -119,7 +164,132 @@ window.DEFAULT_CONTENT = {
 
   footer: {
     tekst: "JoppeDS Studio's",
-    socials: [{ label: "YouTube", url: "https://www.youtube.com/@JoppeDS" }]
+    ondertitel: "Create. Analyze. Improve. Repeat.",
+    copyright: "Alle rechten voorbehouden.",
+    kopSocials: "Volg mij",
+    kopLinks: "Snel naar",
+    socials: [{ label: "YouTube", url: "https://www.youtube.com/@JoppeDS" }],
+    links: [
+      { label: "Contact", url: "#contact" },
+      { label: "Projecten", url: "#projecten" }
+    ],
+    toonReviewknop: true,
+    toonAdminlink: true
+  },
+
+  /* ------------------------------------------------------------------------
+     Formulieren
+     ------------------------------------------------------------------------
+     Beide formulieren worden opgebouwd uit onderstaande beschrijving. Pas je
+     hier iets aan in de admin, dan verandert het formulier op de site mee.
+
+     Velden met "vast: true" mogen niet verwijderd worden: de database heeft
+     ze nodig om te weten wie er aanvraagt en waarover het gaat. De tekst
+     erop mag je wel vrij aanpassen.
+     ------------------------------------------------------------------------ */
+  formulieren: {
+    projectaanvraag: {
+      kop: "Vertel me over je project",
+      tekst:
+        "Hoe vollediger je dit invult, hoe scherper ik kan inschatten wat er nodig is. Weet je iets nog niet? Laat het gerust leeg.",
+      knop: "Aanvraag indienen",
+      voetnoot: "Je kan dit maar één keer indienen met deze code.",
+      bedankt:
+        "Bedankt. Ik bekijk je aanvraag en neem contact op via het e-mailadres dat je opgaf.",
+      groepen: [
+        {
+          titel: "Jouw gegevens",
+          velden: [
+            { id: "naam", label: "Naam", type: "text", verplicht: true, half: true, vast: true },
+            { id: "email", label: "E-mailadres", type: "email", verplicht: true, half: true, vast: true },
+            { id: "bedrijf", label: "Bedrijf of kanaal", type: "text", half: true, placeholder: "Optioneel" },
+            { id: "telefoon", label: "Telefoonnummer", type: "tel", half: true, placeholder: "Optioneel" }
+          ]
+        },
+        {
+          titel: "Het project",
+          velden: [
+            { id: "titel", label: "Titel", type: "text", verplicht: true, vast: true,
+              placeholder: "Bijvoorbeeld: Aftermovie zomerfestival" },
+            { id: "beschrijving", label: "Wat wil je precies laten maken? Wie is je doelgroep?",
+              type: "textarea", verplicht: true, vast: true, regels: 6,
+              placeholder: "Beschrijf het idee, de boodschap en voor wie het bedoeld is." },
+            { id: "doel", label: "Wat moet het opleveren?", type: "select",
+              opties: ["Meer naamsbekendheid", "Meer verkoop of inschrijvingen", "Entertainment",
+                       "Informeren of uitleggen", "Sfeerbeeld of herinnering", "Iets anders"] }
+          ]
+        },
+        {
+          titel: "Vorm en platform",
+          velden: [
+            { id: "formaat", label: "Soort content", type: "select", half: true,
+              opties: ["Long-form", "Short-form", "Long-form én short-form", "Livestream",
+                       "Thumbnail design", "Iets anders"] },
+            { id: "lengte", label: "Gewenste lengte", type: "text", half: true,
+              placeholder: "Bijvoorbeeld: 8 à 10 minuten" },
+            { id: "platform", label: "Platform", type: "vinkjes",
+              opties: ["YouTube", "TikTok", "Instagram", "Facebook", "Twitch", "LinkedIn",
+                       "Eigen website", "Intern gebruik"] },
+            { id: "aantal", label: "Hoeveel video's?", type: "number", kort: true, placeholder: "1" }
+          ]
+        },
+        {
+          titel: "Stijl",
+          velden: [
+            { id: "stijl", label: "Welke richting zie je voor je?", type: "vinkjes",
+              opties: ["Cinematisch", "Snel en energiek", "Rustig en informatief", "Gaming",
+                       "Vlog", "Documentair", "Humoristisch", "Zakelijk"] },
+            { id: "referenties", label: "Voorbeelden die je aanspreken", type: "textarea", regels: 3,
+              placeholder: "Plak hier links naar video's met een stijl die je goed vindt." }
+          ]
+        },
+        {
+          titel: "Praktisch",
+          velden: [
+            { id: "budget", label: "Budget", type: "select", half: true,
+              opties: ["Minder dan € 100", "€ 100 – € 250", "€ 250 – € 500", "€ 500 – € 1000",
+                       "Meer dan € 1000", "Nog te bespreken"] },
+            { id: "deadline", label: "Wanneer heb je het nodig?", type: "date", half: true },
+            { id: "drive", label: "Link naar je bestanden", type: "url",
+              placeholder: "https://drive.google.com/…",
+              hint: "Zet je beeldmateriaal, logo's en muziek in een Google Drive-map en zet die op \"iedereen met de link kan bekijken\"." },
+            { id: "assets", label: "Wat zit er in die map?", type: "textarea", regels: 3,
+              placeholder: "Bijvoorbeeld: 40 minuten ruwe beelden, logo in SVG, twee muzieknummers." }
+          ]
+        },
+        {
+          titel: "Nog iets kwijt?",
+          velden: [
+            { id: "extra", label: "Extra informatie", type: "textarea", regels: 4,
+              placeholder: "Alles wat ik verder moet weten." }
+          ]
+        }
+      ]
+    },
+
+    prijsaanvraag: {
+      kop: "Vraag dit pakket aan",
+      tekst:
+        "Vul kort in wat je nodig hebt, dan bezorg ik je een voorstel op maat. Je zit nergens aan vast.",
+      knop: "Aanvraag versturen",
+      voetnoot: "Je krijgt een antwoord op het e-mailadres dat je opgeeft.",
+      bedankt: "Bedankt. Ik bekijk je aanvraag en neem snel contact op.",
+      groepen: [
+        {
+          titel: "",
+          velden: [
+            { id: "pakket", label: "Welk pakket?", type: "select", vast: true, opties: [] },
+            { id: "naam", label: "Naam", type: "text", verplicht: true, half: true, vast: true },
+            { id: "email", label: "E-mailadres", type: "email", verplicht: true, half: true, vast: true },
+            { id: "telefoon", label: "Telefoonnummer", type: "tel", half: true, placeholder: "Optioneel" },
+            { id: "deadline", label: "Wanneer heb je het nodig?", type: "date", half: true },
+            { id: "beschrijving", label: "Waarover gaat het?", type: "textarea", verplicht: true,
+              vast: true, regels: 5,
+              placeholder: "Vertel kort wat je wil laten maken en voor wie het bedoeld is." }
+          ]
+        }
+      ]
+    }
   }
 };
 
