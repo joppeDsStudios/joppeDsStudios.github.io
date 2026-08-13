@@ -1,0 +1,10 @@
+# JoppeDS Studio's
+# De statuspagina en de admin horen niet in Google thuis.
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+Disallow: /admin.html
+Disallow: /traject.html
+
+Sitemap: https://joppedsstudios.github.io/sitemap.xml
