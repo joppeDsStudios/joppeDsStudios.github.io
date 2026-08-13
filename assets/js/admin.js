@@ -11,6 +11,20 @@ const esc = (v) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
 
+/* Klik naast het venster om te sluiten.
+   Let op: de scrollbalk hoort bij het dialoogvenster zelf, dus een klik
+   daarop had als doelwit het venster en sloot het per ongeluk. Daarom
+   vergelijken we de muispositie met de randen in plaats van het doelwit. */
+function sluitBijKlikNaast(dlg) {
+  dlg.addEventListener("mousedown", (e) => {
+    const r = dlg.getBoundingClientRect();
+    const binnen =
+      e.clientX >= r.left && e.clientX <= r.right &&
+      e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!binnen) dlg.close();
+  });
+}
+
 /* Waarde ophalen of zetten via een pad zoals "over.feiten.0.label" */
 const getPath = (o, p) => p.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
 const setPath = (o, p, v) => {
@@ -120,8 +134,7 @@ $$(".tab").forEach((t) =>
     }
     if (t.dataset.tab === "aanvragen" && !aanvragenGeladen) {
       aanvragenGeladen = true;
-      loadAanvragen();
-      loadCodes();
+      sb.rpc("ruim_projecten_op").then(() => loadAanvragen());
     }
     if (t.dataset.tab === "reviews" && !reviewsGeladen) {
       reviewsGeladen = true;
@@ -277,8 +290,17 @@ $("#msglist").addEventListener("click", async (e) => {
    Toegangscodes
    -------------------------------------------------------------------------- */
 
-/* Alfabet zonder tekens die op elkaar lijken (0/O, 1/I/L). Zo kan een klant
-   een code overtypen zonder vergissingen. */
+
+
+/* --------------------------------------------------------------------------
+   Volgcodes
+   --------------------------------------------------------------------------
+   Elke aanvraag krijgt er automatisch een. Deze functie is er voor het geval
+   een oud project er nog geen heeft.
+   -------------------------------------------------------------------------- */
+
+/* Alfabet zonder tekens die op elkaar lijken (geen O/0, geen I/1/L), zodat
+   overtypen foutloos gaat. */
 const CODE_ALFABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 function nieuweCode() {
@@ -286,61 +308,6 @@ function nieuweCode() {
   crypto.getRandomValues(buf);
   const t = [...buf].map((n) => CODE_ALFABET[n % CODE_ALFABET.length]).join("");
   return `JDS-${t.slice(0, 4)}-${t.slice(4, 8)}`;
-}
-
-async function loadCodes() {
-  const lijst = $("#codelijst");
-  const { data, error } = await sb
-    .from("project_codes")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (error) {
-    lijst.innerHTML = `<p class="hint">Codes laden lukte niet: ${esc(error.message)}.
-      Klik op "Controleer de installatie" hierboven.</p>`;
-    console.error("[JoppeDS] codes laden", error);
-    return;
-  }
-
-  const open = data.filter(
-    (c) => !c.gebruikt_op && (!c.verloopt_op || new Date(c.verloopt_op) > new Date())
-  ).length;
-  $("#codesamenvatting").textContent = `${open} bruikbaar · ${data.length} totaal`;
-
-  if (!data.length) {
-    lijst.innerHTML = `<p class="hint">Nog geen codes aangemaakt.</p>`;
-    return;
-  }
-
-  lijst.innerHTML = data
-    .map((c) => {
-      const verlopen = c.verloopt_op && new Date(c.verloopt_op) < new Date();
-      const op = c.gebruikt_op || verlopen;
-      const staat = c.gebruikt_op
-        ? "Gebruikt op " + datum(c.gebruikt_op)
-        : verlopen
-        ? "Verlopen"
-        : c.verloopt_op
-        ? "Geldig tot " + datum(c.verloopt_op)
-        : "Onbeperkt geldig";
-
-      return `
-      <div class="code-row ${op ? "is-op" : ""}" data-code="${esc(c.code)}">
-        <span class="code-row__code">${esc(c.code)}</span>
-        <span class="code-row__meta">${esc(c.label || "zonder label")} · ${esc(staat)}</span>
-        <span class="code-row__acts">
-          ${
-            op
-              ? ""
-              : `<button class="mini" data-kopie="${esc(c.code)}">Kopieer code</button>
-                 <button class="mini" data-mail="${esc(c.code)}">Kopieer mail</button>`
-          }
-          <button class="mini mini--danger" data-codedel="${esc(c.code)}">Verwijderen</button>
-        </span>
-      </div>`;
-    })
-    .join("");
 }
 
 /* --------------------------------------------------------------------------
@@ -356,13 +323,15 @@ const ONDERDELEN = [
   ["Tabel messages",           "tabel",   "messages",         "het contactformulier"],
   ["Tabel site_content",       "tabel",   "site_content",     "de teksten van je site"],
   ["Tabel pageviews",          "tabel",   "pageviews",        "bezoekersstatistieken"],
-  ["Tabel project_codes",      "tabel",   "project_codes",    "toegangscodes"],
   ["Tabel project_requests",   "tabel",   "project_requests", "projectaanvragen"],
   ["Tabel reviews",            "tabel",   "reviews",          "reviews insturen"],
   ["Weergave reviews_publiek", "tabel",   "reviews_publiek",  "reviews tonen op je site"],
   ["Functie check_code",       "functie", "check_code",       "codes controleren"],
   ["Functie submit_request",   "functie", "submit_request",   "aanvragen indienen"],
-  ["Functie submit_open_request", "functie", "submit_open_request", "prijsaanvragen indienen"]
+  ["Functie submit_open_request", "functie", "submit_open_request", "prijsaanvragen indienen"],
+  ["Tabel project_files",      "tabel",   "project_files",     "opgeleverd werk tonen"],
+  ["Tabel project_berichten",  "tabel",   "project_berichten", "berichten met de klant"],
+  ["Functie haal_traject",     "functie", "haal_traject",      "de statuspagina"]
 ];
 
 async function checkOnderdeel(soort, naam) {
@@ -374,6 +343,10 @@ async function checkOnderdeel(soort, naam) {
     if (naam === "check_code") {
       const { data, error } = await sb.rpc("check_code", { p_code: "JDS-TEST-TEST" });
       return { ok: !error && typeof data?.geldig === "boolean", detail: error?.message };
+    }
+    if (naam === "haal_traject") {
+      const { data, error } = await sb.rpc("haal_traject", { p_code: "JDS-TEST-TEST" });
+      return { ok: !error && data?.ok === false, detail: error?.message };
     }
     if (naam === "submit_open_request") {
       /* Bewust leeg: het antwoord "onvolledig" bewijst dat de functie werkt,
@@ -452,89 +425,32 @@ $("#diagnoseknop").addEventListener("click", (e) => {
   testInstallatie(false);
 });
 
-$("#genereer").addEventListener("click", async (e) => {
-  e.preventDefault();
-  const note = $("#codenote");
-  const btn = $("#genereer");
-  const dagen = $("#c-dagen").value;
 
-  btn.disabled = true;
-  const code = nieuweCode();
-
-  const { error } = await sb.from("project_codes").insert([
-    {
-      code,
-      label: $("#c-label").value.trim() || null,
-      email: $("#c-email").value.trim() || null,
-      verloopt_op: dagen ? new Date(Date.now() + Number(dagen) * 864e5).toISOString() : null
-    }
-  ]);
-
-  btn.disabled = false;
-
-  if (error) {
-    console.error("[JoppeDS] code aanmaken", error);
-    note.hidden = false;
-    note.className = "form__note form__note--err";
-    note.textContent =
-      error.code === "42P01" || /does not exist/i.test(error.message || "")
-        ? "De tabel project_codes bestaat nog niet. Voer supabase-setup.sql opnieuw uit in Supabase."
-        : "Code aanmaken lukte niet: " + error.message;
-    return;
-  }
-
-  note.hidden = false;
-  note.className = "form__note form__note--ok";
-  note.textContent = `Code ${code} aangemaakt. Klik op Kopieer om hem te versturen.`;
-  $("#c-label").value = "";
-  $("#c-email").value = "";
-  loadCodes();
-});
-
-$("#codelijst").addEventListener("click", async (e) => {
-  const kopie = e.target.closest("[data-kopie]");
-  const mail = e.target.closest("[data-mail]");
-  const del = e.target.closest("[data-codedel]");
-
-  const naarKlembord = async (knop, tekst, gelukt) => {
-    const origineel = knop.textContent;
-    try {
-      await navigator.clipboard.writeText(tekst);
-      knop.textContent = gelukt;
-      setTimeout(() => (knop.textContent = origineel), 1600);
-    } catch (err) {
-      prompt("Kopieer deze tekst:", tekst);
-    }
-  };
-
-  /* Alleen de code. Dit is wat de klant in het veld moet plakken. */
-  if (kopie) await naarKlembord(kopie, kopie.dataset.kopie, "Gekopieerd");
-
-  /* Het volledige mailtje, om zelf te versturen. */
-  if (mail) {
-    const link = location.href.split("#")[0].replace(/admin\.html.*$/, "aanvraag.html");
-    const tekst =
-      `Hoi,\n\n` +
-      `Leuk dat je met JoppeDS Studio's wil samenwerken. Vul je projectaanvraag in via:\n` +
-      `${link}\n\n` +
-      `Je code is: ${mail.dataset.mail}\n\n` +
-      `Deze code werkt één keer. Tot binnenkort,\nJoppe`;
-    await naarKlembord(mail, tekst, "Mail gekopieerd");
-  }
-
-  if (del) {
-    if (!confirm(`Code ${del.dataset.codedel} verwijderen?`)) return;
-    await sb.from("project_codes").delete().eq("code", del.dataset.codedel);
-    loadCodes();
-  }
-});
 
 /* --------------------------------------------------------------------------
    Projectaanvragen
    -------------------------------------------------------------------------- */
 
 const STATUSSEN = ["nieuw", "in behandeling", "goedgekeurd", "afgerond", "afgewezen"];
-const badgeKlasse = (s) => "badge--" + (s === "in behandeling" ? "behandeling" : s);
+const FASE_KORT = {
+  aangevraagd: "Te beoordelen",
+  contract: "Wacht op akkoord",
+  ingepland: "Ingepland",
+  productie: "In productie",
+  feedback: "Bij de klant",
+  aanpassen: "Aanpassen",
+  betaling: "Wacht op betaling",
+  download: "Klaar",
+  afgewerkt: "Afgewerkt",
+  afgewezen: "Afgewezen"
+};
+
+const faseKlasse = (f) =>
+  f === "aangevraagd" ? "badge--nieuw"
+  : f === "afgewezen" ? "badge--afgewezen"
+  : f === "afgewerkt" ? "badge--afgerond"
+  : f === "download" ? "badge--goedgekeurd"
+  : "badge--behandeling";
 
 let aanvragen = [];
 let statusFilter = "";
@@ -554,7 +470,7 @@ async function loadAanvragen() {
   }
 
   aanvragen = data;
-  const openstaand = data.filter((a) => a.status === "nieuw" || a.status === "in behandeling").length;
+  const openstaand = data.filter((a) => !["afgewerkt", "afgewezen"].includes(a.fase)).length;
   $("#badge-aanvragen").textContent = openstaand ? `(${openstaand})` : "";
   toonAanvragen();
 }
@@ -563,11 +479,11 @@ function toonAanvragen() {
   const lijst = $("#aanvraaglijst");
   const term = zoek.aanvragen;
 
-  let rijen = statusFilter ? aanvragen.filter((a) => a.status === statusFilter) : aanvragen;
+  let rijen = statusFilter ? aanvragen.filter((a) => a.fase === statusFilter) : aanvragen;
   const voorZoeken = rijen.length;
 
   rijen = rijen.filter((a) =>
-    past([a.titel, a.naam, a.email, a.referentie, a.status, a.notitie,
+    past([a.titel, a.naam, a.email, a.referentie, a.volgcode, a.pakket, a.notitie,
           JSON.stringify(a.data || {})], term)
   );
 
@@ -579,11 +495,11 @@ function toonAanvragen() {
 
   if (!rijen.length) {
     lijst.innerHTML = `<div class="empty"><strong>${
-      aanvragen.length ? "Geen aanvragen met deze status" : "Nog geen aanvragen"
+      aanvragen.length ? "Geen projecten in deze fase" : "Nog geen projecten"
     }</strong>${
       aanvragen.length
         ? "Kies een andere filter."
-        : "Genereer hierboven een code en stuur die naar een klant."
+        : "Projecten komen binnen via de diensten op je website."
     }</div>`;
     return;
   }
@@ -591,13 +507,13 @@ function toonAanvragen() {
   lijst.innerHTML = gevonden(rijen.length, voorZoeken, term) + rijen
     .map(
       (a) => `
-      <article class="req ${a.status === "nieuw" ? "is-nieuw" : ""}" data-id="${a.id}">
+      <article class="req ${a.fase === "aangevraagd" ? "is-nieuw" : ""}" data-id="${a.id}">
         <div class="req__main">
           <div class="req__titel">${markeer(a.titel, term)}</div>
           <div class="req__wie">${markeer(a.naam, term)} · ${markeer(a.referentie, term)} · ${esc(datum(a.created_at))}</div>
         </div>
         <div class="req__acts">
-          <span class="badge ${badgeKlasse(a.status)}">${esc(a.status)}</span>
+          <span class="badge ${faseKlasse(a.fase)}">${esc(FASE_KORT[a.fase] || a.fase)}</span>
           <button class="mini" data-open="${a.id}">Bekijk</button>
           <button class="mini mini--danger" data-del="${a.id}">Verwijder</button>
         </div>
@@ -628,6 +544,714 @@ $("#aanvraaglijst").addEventListener("click", async (e) => {
   }
 });
 
+
+/* --------------------------------------------------------------------------
+   Projectbegeleiding
+   --------------------------------------------------------------------------
+   Alles wat de klant op de statuspagina ziet, stuur je hiervandaan aan.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   Het projectsysteem
+   --------------------------------------------------------------------------
+   Elk project doorloopt vaste fases. De knoppen die je ziet, horen bij de
+   fase waarin het project zit: zo hoef je nooit te zoeken wat de volgende
+   stap is.
+   -------------------------------------------------------------------------- */
+
+const FASEN = [
+  ["aangevraagd", "1 · Goedkeuring",        "Bekijk de aanvraag en beslis of je ze aanneemt."],
+  ["contract",    "2 · Wacht op akkoord",   "De klant moet de overeenkomst nog tekenen."],
+  ["ingepland",   "3 · Bevestigd",          "Staat op je to-do. Plan in wanneer je begint."],
+  ["productie",   "4 · In productie",       "Je bent aan het werk. Geef een richtdatum door."],
+  ["feedback",    "5 · Klaar voor feedback","De klant bekijkt je versie."],
+  ["aanpassen",   "5 · Aanpassing bezig",   "Je verwerkt de opmerkingen van de klant."],
+  ["betaling",    "6 · Betaling",           "Wacht op betaling voor je het eindbestand vrijgeeft."],
+  ["download",    "7 · Klaar om te downloaden", "De klant kan het eindbestand ophalen."],
+  ["afgewerkt",   "8 · Afgewerkt",          "Klaar. Het project wist zichzelf na drie dagen."],
+  ["afgewezen",   "Afgewezen",              "Deze aanvraag neem je niet aan."]
+];
+
+const FASE_NAAM = Object.fromEntries(FASEN.map(([k, n]) => [k, n]));
+
+
+/* De overeenkomst die de klant tekent.
+   {prijs}, {titel}, {pakket}, {rondes} en {naam} worden ingevuld met de
+   gegevens van dit project. Je kan de tekst aanpassen onder Inhoud. */
+const STANDAARD_CONTRACT = `Tussen JoppeDS Studio's en {naam}
+
+1. Opdracht
+Ik maak voor jou: {titel}{pakketregel}, zoals beschreven in je aanvraag.
+
+2. Prijs
+{prijs}. Vast bedrag. Vraag je later werk dat buiten de opdracht valt, dan
+spreken we eerst een nieuwe prijs af.
+
+3. Betaling
+Je betaalt nadat je het eindresultaat goedkeurt. Tot de betaling binnen is,
+kan je het bestand bekijken maar niet downloaden.
+
+4. Aanpassingen
+Je hebt {rondes} feedbackronde(s). Geef per ronde in één keer door wat er
+anders mag. Zijn je rondes op, dan spreken we samen af wat extra werk kost.
+
+5. Levering
+Je krijgt het eindbestand digitaal. De opleverdatum is een richtlijn; bij
+vertraging laat ik dat tijdig weten.
+
+6. Rechten
+Na betaling mag je het werk gebruiken voor het doel dat je opgaf. Ik blijf de
+maker en mag het tonen in mijn portfolio, tenzij je daar bezwaar tegen maakt.
+
+7. Jouw materiaal
+Je bevestigt dat je het materiaal dat je aanlevert mag gebruiken. Ik ben niet
+aansprakelijk voor claims van derden daarover.
+
+8. Annuleren
+Annuleer je na de start, dan betaal je het deel dat al gemaakt is. Annuleer je
+ervoor, dan betaal je niets.
+
+9. Bewaartermijn
+Drie dagen na afronding wordt alles uit dit systeem gewist. Bewaar je
+eindbestand dus zelf op tijd.`;
+
+
+/* De contracttekst met de gegevens van dit project ingevuld */
+function contractTekst(a, prijs) {
+  const basis = work?.contract?.tekst || STANDAARD_CONTRACT;
+  const p = prijs ?? a.prijs;
+  return basis
+    .replace(/\{naam\}/g, a.naam || "de klant")
+    .replace(/\{titel\}/g, a.titel || "je project")
+    .replace(/\{pakketregel\}/g, a.pakket ? ` (pakket ${a.pakket})` : "")
+    .replace(/\{pakket\}/g, a.pakket || "op maat")
+    .replace(/\{rondes\}/g, String(a.rondes ?? 2))
+    .replace(/\{prijs\}/g, p || "het afgesproken bedrag");
+}
+
+
+/* Prijzen tonen we zonder euroteken in het veld: dat staat er vast voor.
+   Bij het opslaan zetten we het er weer bij, zodat de klant "€ 250" ziet. */
+function bedragZonderEuro(v) {
+  return String(v || "").replace(/^\s*€\s*/, "").trim();
+}
+function metEuro(v) {
+  const t = String(v || "").trim();
+  return t ? (/^€/.test(t) ? t : "€ " + t) : "";
+}
+
+const AFWIJSREDENEN = [
+  "Mijn agenda zit vol voor deze periode",
+  "De deadline is niet haalbaar",
+  "Dit valt buiten wat ik aanbied",
+  "Het budget past niet bij de opdracht",
+  "Onvoldoende informatie om te starten",
+  "Andere reden"
+];
+
+const SOORTEN = [
+  { v: "video", t: "Video" },
+  { v: "short", t: "Short of reel" },
+  { v: "thumbnail", t: "Thumbnail" },
+  { v: "afbeelding", t: "Afbeelding" },
+  { v: "anders", t: "Ander bestand" }
+];
+
+let leveringen = [];
+let projectberichten = [];
+
+async function laadProject(id) {
+  const [best, ber] = await Promise.all([
+    sb.from("project_files").select("*").eq("aanvraag_id", id).order("created_at", { ascending: false }),
+    sb.from("project_berichten").select("*").eq("aanvraag_id", id).order("created_at")
+  ]);
+  leveringen = best.data || [];
+  projectberichten = ber.data || [];
+}
+
+/* --------------------------------------------------------------------------
+   Google Drive
+   --------------------------------------------------------------------------
+   Je zet je bestanden op Drive en plakt de deellink. Hieronder halen we het
+   bestands-id eruit, zodat de klant het rechtstreeks kan bekijken en later
+   downloaden zonder eerst naar Drive te moeten.
+   -------------------------------------------------------------------------- */
+
+function driveId(url) {
+  const s = String(url || "");
+  const m =
+    s.match(/\/file\/d\/([A-Za-z0-9_-]{10,})/) ||
+    s.match(/[?&]id=([A-Za-z0-9_-]{10,})/) ||
+    s.match(/\/d\/([A-Za-z0-9_-]{10,})/);
+  return m ? m[1] : null;
+}
+
+function driveSoort(url) {
+  const s = String(url || "");
+  if (/drive\.google\.com\/drive\/folders\//.test(s)) return "map";
+  return driveId(s) ? "bestand" : null;
+}
+
+/* --------------------------------------------------------------------------
+   Het paneel per fase
+   -------------------------------------------------------------------------- */
+
+function faseBalk(a) {
+  const zichtbaar = FASEN.filter(([k]) => k !== "afgewezen" && k !== "aanpassen");
+  const huidig = a.fase === "aanpassen" ? "feedback" : a.fase;
+  const nu = zichtbaar.findIndex(([k]) => k === huidig);
+
+  if (a.fase === "afgewezen") {
+    return `<div class="fasebalk fasebalk--weg">
+        <span>Afgewezen${a.afwijsreden ? " · " + esc(a.afwijsreden) : ""}</span>
+        <button class="fasepijl" data-stap="aangevraagd" title="Terug naar de beoordeling">&larr;</button>
+      </div>`;
+  }
+
+  const vorige = nu > 0 ? zichtbaar[nu - 1] : null;
+  const volgende = nu >= 0 && nu < zichtbaar.length - 1 ? zichtbaar[nu + 1] : null;
+
+  return `
+    <div class="fasebalk">
+      <button class="fasepijl" ${vorige ? `data-stap="${vorige[0]}" title="Terug naar ${esc(vorige[1])}"` : "disabled"}>&larr;</button>
+
+      ${zichtbaar
+        .map(
+          ([k, n], i) => `
+        <button class="fasebalk__stap ${i < nu ? "is-klaar" : i === nu ? "is-nu" : ""}"
+                data-stap="${esc(k)}" title="${esc(n)}">${i + 1}</button>`
+        )
+        .join("")}
+
+      <button class="fasepijl" ${volgende ? `data-stap="${volgende[0]}" title="Door naar ${esc(volgende[1])}"` : "disabled"}>&rarr;</button>
+
+      <span class="fasebalk__naam">
+        ${esc(FASE_NAAM[a.fase] || a.fase)}
+        ${
+          ["feedback", "aanpassen"].includes(a.fase) && a.rondes
+            ? `<span class="fasebalk__ronde">Feedback ${Math.min((a.rondes_op || 0) + 1, a.rondes)}/${a.rondes}</span>`
+            : ""
+        }
+      </span>
+    </div>`;
+}
+
+
+/* De knoppen die bij deze fase horen */
+
+/* Vroeg de klant een extra feedbackronde? Dan zie je dat bovenaan, met de
+   knoppen om toe te kennen of te weigeren. */
+
+/* De volgorde van het traject, gebruikt door de pijltjes in de fasebalk. */
+const VOLGORDE = ["aangevraagd", "contract", "ingepland", "productie",
+                  "feedback", "betaling", "download", "afgewerkt"];
+
+function volgendeFase(fase) {
+  const nu = VOLGORDE.indexOf(fase === "aanpassen" ? "feedback" : fase);
+  return nu >= 0 && nu < VOLGORDE.length - 1 ? VOLGORDE[nu + 1] : null;
+}
+
+
+function extraVerzoek(a) {
+  if (!a.extra_gevraagd) return "";
+  return `
+    <div class="verzoek">
+      <p class="verzoek__kop">De klant vraagt een extra feedbackronde</p>
+      <p class="verzoek__tekst">${esc(a.extra_gevraagd)}</p>
+      <div class="verzoek__acts">
+        <button class="btn btn--fill" data-extratoe="${a.id}">Toekennen</button>
+        <button class="mini" data-extraweg="${a.id}">Afwijzen</button>
+      </div>
+    </div>`;
+}
+
+function faseActies(a) {
+  const over = Math.max(0, (a.rondes || 0) - (a.rondes_op || 0));
+
+  switch (a.fase) {
+    case "aangevraagd":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Neem je deze opdracht aan?</h3>
+          <p class="hint">
+            Kijk het tabblad "De aanvraag" na. Keur je goed, dan krijgt de klant
+            de overeenkomst te tekenen en start het traject.
+          </p>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="pf-prijs">Prijs</label>
+              <div class="euro">
+                <input id="pf-prijs" type="text" maxlength="40" placeholder="250"
+                       value="${esc(bedragZonderEuro(a.prijs))}">
+              </div>
+            </div>
+            <div class="field">
+              <label for="pf-rondes0">Feedbackrondes</label>
+              <input id="pf-rondes0" type="number" min="0" max="9" value="${a.rondes ?? 2}">
+            </div>
+          </div>
+
+          <label class="schakel">
+            <input type="checkbox" id="pf-gratis" ${a.gratis ? "checked" : ""}>
+            <span class="schakel__spoor"><span class="schakel__knop"></span></span>
+            <span class="schakel__tekst">
+              <strong>Gratis voor deze klant</strong>
+              <span>De klant ziet de prijs doorstreept en hoeft niets te tekenen of te betalen.</span>
+            </span>
+          </label>
+
+          <details class="group" id="contractgroep">
+            <summary><span>De overeenkomst</span><span class="group__sub">wat de klant tekent</span></summary>
+            <div class="group__body">
+              <div class="field">
+                <label for="pf-contract">Tekst</label>
+                <textarea id="pf-contract" rows="14">${esc(a.contract_tekst || contractTekst(a))}</textarea>
+              </div>
+              <button class="mini" data-contractherstel="1">Zet de standaardtekst terug</button>
+            </div>
+          </details>
+
+          <div class="form__note" id="pf-gknote" hidden></div>
+
+          <div class="fasekaart__acts">
+            <button class="btn btn--fill" data-goedkeuren="${a.id}">Goedkeuren</button>
+            <button class="btn" data-afwijzen="${a.id}">Afwijzen</button>
+          </div>
+        </div>`;
+
+    case "contract":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Wacht op het akkoord van de klant</h3>
+          <p class="hint">
+            De klant ziet de overeenkomst op zijn statuspagina en moet die tekenen
+            voor het project verder kan. Prijs: ${esc(a.prijs || "niet ingevuld")}.
+          </p>
+          <div class="fasekaart__acts">
+            <button class="mini" data-kopieer-mail="${esc(a.volgcode || "")}">Herinnering mailen</button>
+            <button class="mini" data-naarfase="aangevraagd">Terug naar goedkeuring</button>
+          </div>
+        </div>`;
+
+    case "ingepland":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Klaar om te starten?</h3>
+          <p class="hint">Zet het project op productie zodra je eraan begint.</p>
+          <div class="fasekaart__acts">
+            <button class="btn btn--fill" data-naarfase="productie">Start de productie</button>
+          </div>
+        </div>`;
+
+    case "productie":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Wanneer verwacht je de eerste versie?</h3>
+          <p class="hint">Een richtdatum voor de klant. Je kan die later altijd aanpassen.</p>
+          <div class="form__row">
+            <div class="field">
+              <label for="pf-levering">Verwachte eerste versie</label>
+              <input id="pf-levering" type="date" value="${a.levering ? a.levering.slice(0, 10) : ""}">
+            </div>
+            <div class="field" style="align-self:end">
+              <button class="btn" data-datumdoor="${a.id}">Datum doorgeven</button>
+            </div>
+          </div>
+          <div class="form__note" id="pf-datumnote" hidden></div>
+          <p class="hint">
+            Ben je klaar met de eerste versie? Zet ze hieronder online: het project
+            gaat dan vanzelf naar de feedbackfase.
+          </p>
+          <div class="fasekaart__acts">
+            <button class="btn btn--fill" data-upload="${a.id}">Eerste versie uploaden</button>
+          </div>
+        </div>`;
+
+    case "feedback":
+      return `
+        ${extraVerzoek(a)}
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">De klant bekijkt je versie</h3>
+          <p class="hint">
+            ${over} van ${a.rondes} feedbackrondes over. Vraagt de klant een aanpassing,
+            dan springt het project vanzelf naar "aanpassing bezig".
+          </p>
+          <div class="fasekaart__acts">
+            <button class="btn" data-naarfase="aanpassen">Ik ben aan het aanpassen</button>
+            <button class="mini" data-extraronde="${a.id}">+ 1 extra ronde</button>
+          </div>
+        </div>`;
+
+    case "aanpassen":
+      return `
+        ${extraVerzoek(a)}
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Je verwerkt de opmerkingen</h3>
+          <p class="hint">
+            ${over} van ${a.rondes} rondes over. Voeg je nieuwe versie hieronder toe
+            en zet het project terug klaar voor feedback.
+          </p>
+          <div class="fasekaart__acts">
+            <button class="btn btn--fill" data-upload="${a.id}">Nieuwe versie uploaden</button>
+            <button class="mini" data-extraronde="${a.id}">+ 1 extra ronde</button>
+          </div>
+        </div>`;
+
+    case "betaling":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Wachten op betaling</h3>
+          <p class="hint">
+            De klant ziet het bedrag en je betaallink op zijn statuspagina.
+            Zodra je het geld ziet, vink je hieronder af.
+          </p>
+          <div class="form__row">
+            <div class="field">
+              <label for="pf-bedrag2">Bedrag</label>
+              <input id="pf-bedrag2" type="text" value="${esc(a.betaling_bedrag || "")}">
+            </div>
+            <div class="field">
+              <label for="pf-betaallink2">Betaallink</label>
+              <input id="pf-betaallink2" type="url" value="${esc(a.betaling_link || "")}">
+            </div>
+          </div>
+          <div class="fasekaart__acts">
+            <button class="btn btn--fill" data-betaald="${a.id}">Betaling ontvangen</button>
+            ${
+              leveringen.some((l) => l.finaal)
+                ? ""
+                : `<button class="btn" data-upload="${a.id}">Finale versie klaarzetten</button>`
+            }
+          </div>
+          <p class="hint">
+            Je kan de finale versie nu al klaarzetten. De klant ziet dat ze er is,
+            maar kan pas downloaden nadat je de betaling hebt aangeduid.
+          </p>
+        </div>`;
+
+    case "download":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Zet het eindbestand klaar</h3>
+          <p class="hint">
+            Voeg hieronder de versie zonder watermerk toe en vink "finale versie" aan.
+            Alleen die kan de klant downloaden.
+          </p>
+          <div class="fasekaart__acts">
+            ${
+              leveringen.some((l) => l.finaal)
+                ? `<button class="btn btn--fill" data-naarfase="afgewerkt">Project afsluiten</button>`
+                : `<button class="btn btn--fill" data-upload="${a.id}">Finale versie uploaden</button>`
+            }
+          </div>
+        </div>`;
+
+    case "afgewerkt":
+      return `
+        <div class="fasekaart fasekaart--klaar">
+          <h3 class="fasekaart__kop">Afgewerkt</h3>
+          <div class="field">
+            <label for="pf-dank">Nog een woordje meegeven?</label>
+            <textarea id="pf-dank" rows="2" maxlength="600"
+              placeholder="Bedankt voor de samenwerking, en tot een volgende keer."></textarea>
+          </div>
+          <div class="fasekaart__acts" style="margin-bottom:8px">
+            <button class="mini" data-dankbericht="${a.id}">Versturen</button>
+          </div>
+          <p class="hint">
+            ${
+              a.verwijder_op
+                ? "Dit project wist zichzelf op " + datum(a.verwijder_op) + ", inclusief alle bestanden en berichten."
+                : "Dit project wordt binnenkort automatisch gewist."
+            }
+          </p>
+          <div class="fasekaart__acts">
+            <button class="mini" data-naarfase="download">Terug openzetten</button>
+          </div>
+        </div>`;
+
+    case "afgewezen":
+      return `
+        <div class="fasekaart">
+          <h3 class="fasekaart__kop">Afgewezen</h3>
+          <p class="hint">${esc(a.afwijsreden || "Zonder opgegeven reden.")}</p>
+          <div class="fasekaart__acts">
+            <button class="mini" data-naarfase="aangevraagd">Toch opnieuw bekijken</button>
+          </div>
+        </div>`;
+
+    default:
+      return "";
+  }
+}
+
+function projectPaneel(a) {
+  const over = Math.max(0, (a.rondes || 0) - (a.rondes_op || 0));
+  const toonWerk = !["aangevraagd", "contract", "afgewezen"].includes(a.fase);
+
+  return `
+    ${faseBalk(a)}
+
+    <div id="pf-kaart">${faseActies(a)}</div>
+
+    ${
+      toonWerk
+        ? `
+    <div class="werkkop">
+      <h3 class="sub-kop" style="margin:0">Opgeleverd werk</h3>
+      ${
+        ["feedback", "aanpassen", "download"].includes(a.fase)
+          ? `<button class="mini" data-upload="${a.id}">+ Versie uploaden</button>`
+          : ""
+      }
+    </div>
+    <div id="pf-leveringen">${leveringHtml()}</div>
+
+    <h3 class="sub-kop">Berichten met de klant</h3>
+    <div class="gesprek">${berichtHtml()}</div>
+    <div class="field">
+      <label for="pb-tekst">Antwoorden</label>
+      <textarea id="pb-tekst" rows="3" maxlength="3000"></textarea>
+    </div>
+    <button class="btn" data-projectbericht="${a.id}">Bericht versturen</button>`
+        : ""
+    }`;
+}
+
+/* De tab "Details bijstellen" */
+function detailsPaneel(a) {
+  const over = Math.max(0, (a.rondes || 0) - (a.rondes_op || 0));
+  return `
+    <div class="form">
+      <div class="form__row">
+        <div class="field">
+          <label for="pf-fase">Fase</label>
+          <select id="pf-fase">
+            ${FASEN.map(([k, t]) => `<option value="${k}" ${k === a.fase ? "selected" : ""}>${esc(t)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="pf-levering2">Verwachte oplevering</label>
+          <input id="pf-levering2" type="date" value="${a.levering ? a.levering.slice(0, 10) : ""}">
+        </div>
+      </div>
+
+      <div class="form__row">
+        <div class="field">
+          <label for="pf-rondes">Feedbackrondes in totaal</label>
+          <input id="pf-rondes" type="number" min="0" max="9" value="${a.rondes ?? 2}">
+        </div>
+        <div class="field">
+          <label for="pf-op">Al gebruikt</label>
+          <input id="pf-op" type="number" min="0" max="9" value="${a.rondes_op ?? 0}">
+        </div>
+      </div>
+      <p class="hint" style="margin:-6px 0 0">${over} ${over === 1 ? "ronde" : "rondes"} over.</p>
+
+      <div class="form__row">
+        <div class="field">
+          <label for="pf-pakket">Pakket</label>
+          <input id="pf-pakket" type="text" value="${esc(a.pakket || "")}">
+        </div>
+        <div class="field">
+          <label for="pf-prijs2">Prijs</label>
+          <div class="euro">
+            <input id="pf-prijs2" type="text" value="${esc(bedragZonderEuro(a.prijs))}">
+          </div>
+        </div>
+      </div>
+
+      <label class="schakel">
+        <input type="checkbox" id="pf-gratis2" ${a.gratis ? "checked" : ""}>
+        <span class="schakel__spoor"><span class="schakel__knop"></span></span>
+        <span class="schakel__tekst"><strong>Gratis voor deze klant</strong></span>
+      </label>
+
+      <div class="field">
+        <label for="pf-betaallink3">Betaallink</label>
+        <input id="pf-betaallink3" type="url" value="${esc(a.betaling_link || "")}"
+               placeholder="Wero, Payconiq, …">
+      </div>
+
+      <div class="field">
+        <label for="pf-nota">Bericht bij de voortgang</label>
+        <textarea id="pf-nota" rows="2" maxlength="500">${esc(a.klantnota || "")}</textarea>
+      </div>
+
+      <div class="field">
+        <label for="d-notitie">Jouw notitie (alleen jij ziet dit)</label>
+        <textarea id="d-notitie" rows="3">${esc(a.notitie || "")}</textarea>
+      </div>
+
+      ${
+        a.contract_op
+          ? `<div class="form__note form__note--ok">
+               Getekend door ${esc(a.contract_naam || "de klant")} op ${esc(datum(a.contract_op))}.
+             </div>`
+          : ""
+      }
+
+      <button class="btn btn--fill" data-projectbewaar="${a.id}">Opslaan</button>
+    </div>`;
+}
+
+function leveringHtml() {
+  if (!leveringen.length) {
+    return `<p class="hint">Nog niets opgeleverd. Voeg hieronder je eerste versie toe.</p>`;
+  }
+  return leveringen
+    .map(
+      (b) => `
+      <div class="code-row">
+        <span class="code-row__code">${esc(b.titel)}${b.finaal ? " ★" : ""}</span>
+        <span class="code-row__meta">
+          ronde ${b.ronde} · ${esc(b.soort)} · ${esc(datum(b.created_at))}
+          ${b.finaal ? " · finale versie" : ""}
+          ${b.status === "goedgekeurd" ? " · goedgekeurd" : b.status === "aanpassing" ? " · aanpassing gevraagd" : ""}
+          ${b.zichtbaar ? "" : " · verborgen"}
+          ${driveSoort(b.url) ? " · Drive" : ""}
+        </span>
+        <span class="code-row__acts">
+          <a class="mini" href="${esc(b.url)}" target="_blank" rel="noopener">Openen</a>
+          <button class="mini" data-finaal="${b.id}">${b.finaal ? "Niet finaal" : "Finaal"}</button>
+          <button class="mini" data-toonlevering="${b.id}">${b.zichtbaar ? "Verbergen" : "Tonen"}</button>
+          <button class="mini mini--danger" data-weglevering="${b.id}">Verwijderen</button>
+        </span>
+      </div>`
+    )
+    .join("");
+}
+
+function berichtHtml() {
+  if (!projectberichten.length) return `<p class="hint">Nog geen berichten.</p>`;
+  return projectberichten
+    .map(
+      (b) => `
+      <div class="bericht ${b.van === "klant" ? "is-klant" : b.van === "systeem" ? "is-systeem" : ""}">
+        <div class="bericht__wie">${
+          b.van === "klant" ? "Klant" : b.van === "systeem" ? "Systeem" : "Jij"
+        } · ${esc(datum(b.created_at))}</div>
+        <p>${esc(b.bericht)}</p>
+      </div>`
+    )
+    .join("");
+}
+
+
+/* Wat er automatisch mee verandert bij een faseovergang.
+   Een afgewerkt project krijgt hier zijn wisdatum: drie dagen later ruimt de
+   database het op, inclusief bestanden en berichten. */
+function faseExtra(fase) {
+  if (fase === "afgewerkt") {
+    return {
+      status: "afgerond",
+      verwijder_op: new Date(Date.now() + 3 * 864e5).toISOString()
+    };
+  }
+  if (fase === "afgewezen") return { status: "afgewezen" };
+  /* Ga je terug uit "afgewerkt", dan mag de wisdatum weer weg. */
+  return { verwijder_op: null };
+}
+
+/* Het detailvenster opnieuw opbouwen met verse gegevens */
+async function herlaadDetail(id) {
+  await loadAanvragen();
+  const a = aanvragen.find((x) => x.id === id);
+  if (a) toonDetail(a);
+}
+
+/* Afwijzen met een reden uit de lijst, of een eigen tekst */
+function toonAfwijsvenster(id) {
+  const dlg = $("#afwijsvenster");
+  dlg.innerHTML = `
+    <div class="sheet__head">
+      <div>
+        <h2>Aanvraag afwijzen</h2>
+        <p class="hint" style="margin:0">De klant ziet de reden op zijn statuspagina.</p>
+      </div>
+      <button class="mini" type="button" data-awsluit="1">Sluiten</button>
+    </div>
+
+    <div class="sheet__body">
+      <div class="form">
+        <div class="field">
+          <label for="aw-reden">Reden</label>
+          <select id="aw-reden">
+            ${AFWIJSREDENEN.map((r) => `<option>${esc(r)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field" id="aw-eigenvak" hidden>
+          <label for="aw-eigen">Je eigen woorden</label>
+          <textarea id="aw-eigen" rows="3" maxlength="600"
+            placeholder="Schrijf hier wat je de klant wil laten weten."></textarea>
+        </div>
+        <div class="field">
+          <label class="schakel">
+            <input type="checkbox" id="aw-bericht" checked>
+            <span class="schakel__spoor"><span class="schakel__knop"></span></span>
+            <span class="schakel__tekst">
+              <strong>Zet de reden ook bij de berichten</strong>
+              <span>Zo blijft het bewaard in het gesprek met deze klant.</span>
+            </span>
+          </label>
+        </div>
+        <div class="form__note" id="aw-note" hidden></div>
+      </div>
+    </div>
+
+    <div class="sheet__foot">
+      <button class="btn btn--fill" data-awbevestig="${id}">Afwijzen</button>
+      <button class="mini" type="button" data-awsluit="1">Annuleren</button>
+    </div>`;
+
+  dlg.showModal();
+
+  $("#aw-reden").addEventListener("change", (e) => {
+    $("#aw-eigenvak").hidden = e.target.value !== "Andere reden";
+  });
+}
+
+$("#afwijsvenster").addEventListener("click", async (e) => {
+  const dlg = $("#afwijsvenster");
+  if (e.target.closest("[data-awsluit]")) { dlg.close(); return; }
+
+  const ok = e.target.closest("[data-awbevestig]");
+  if (!ok) return;
+
+  const gekozen = $("#aw-reden").value;
+  const eigen = $("#aw-eigen") ? $("#aw-eigen").value.trim() : "";
+  const reden = gekozen === "Andere reden" ? eigen : gekozen;
+
+  if (!reden) {
+    const note = $("#aw-note");
+    note.hidden = false;
+    note.className = "form__note form__note--err";
+    note.textContent = "Schrijf nog even je eigen reden.";
+    return;
+  }
+
+  ok.disabled = true;
+  const id = ok.dataset.awbevestig;
+  const { error } = await sb.from("project_requests").update({
+    fase: "afgewezen", status: "afgewezen", afwijsreden: reden
+  }).eq("id", id);
+  ok.disabled = false;
+
+  if (error) { alert("Afwijzen lukte niet: " + error.message); return; }
+
+  if ($("#aw-bericht").checked) {
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: id, van: "systeem", bericht: "Aanvraag afgewezen: " + reden
+    }]);
+  }
+
+  dlg.close();
+  await herlaadDetail(id);
+});
+
+sluitBijKlikNaast($("#afwijsvenster"));
+
 /* ---- Detailvenster ---- */
 
 const rij = (label, waarde) => {
@@ -648,6 +1272,8 @@ const rij = (label, waarde) => {
 
 function toonDetail(a) {
   if (!a) return;
+  /* Bestanden van het vorige project mogen hier niet blijven hangen. */
+  if ($("#detail").dataset.project !== a.id) { leveringen = []; projectberichten = []; }
   const d = a.data || {};
   const dlg = $("#detail");
 
@@ -655,98 +1281,695 @@ function toonDetail(a) {
     <div class="sheet__head">
       <div>
         <h2>${esc(a.titel)}</h2>
-        <p class="msg__meta">${esc(a.referentie)} · ingediend ${esc(datum(a.created_at))} · ${
-          a.soort === "prijsaanvraag" ? "via de prijzenpagina" : "code " + esc(a.code || "—")
-        }</p>
+        <div class="kopcodes">
+          <span class="kopcode"><span>Klant</span> ${esc(a.naam)}</span>
+          <span class="kopcode"><span>Project</span> ${esc(a.referentie)}</span>
+          ${a.volgcode ? `<span class="kopcode kopcode--geel"><span>Volgcode</span> ${esc(a.volgcode)}</span>` : ""}
+          ${a.pakket ? `<span class="kopcode"><span>Pakket</span> ${esc(a.pakket)}</span>` : ""}
+        </div>
       </div>
       <button class="mini" data-sluit="1">Sluiten</button>
     </div>
 
+    <div class="sheet__tabs">
+      <button class="tab is-on" data-dtab="project">Project</button>
+      <button class="tab" data-dtab="aanvraag">De aanvraag</button>
+      <button class="tab" data-dtab="details">Details bijstellen</button>
+    </div>
+
     <div class="sheet__body">
+      <div data-dpaneel="project">${projectPaneel(a)}</div>
+
+      <div data-dpaneel="aanvraag" hidden>
+        ${
+          Array.isArray(d._velden) && d._velden.length
+            ? `<div class="dl">${d._velden.map((v) => rij(v.label, v.waarde)).join("")}</div>`
+            : `<div class="dl">
+                 ${rij("Naam", d.naam || a.naam)}
+                 ${rij("E-mailadres", d.email || a.email)}
+                 ${rij("Telefoon", d.telefoon)}
+                 ${rij("Beschrijving", d.beschrijving)}
+                 ${rij("Deadline", d.deadline)}
+               </div>`
+        }
+      </div>
+
+      <div data-dpaneel="details" hidden>${detailsPaneel(a)}</div>
+    </div>
+
+    <div class="sheet__foot">
+      <a class="mini" href="mailto:${esc(a.email)}?subject=${encodeURIComponent("Je project " + a.titel)}">Mail de klant</a>
+      ${a.volgcode ? `<button class="mini" data-kopieer-volg="${esc(a.volgcode)}">Kopieer volgcode</button>` : ""}
+      ${a.volgcode ? `<button class="mini" data-kopieer-mail="${esc(a.volgcode)}">Kopieer mail</button>` : ""}
       ${
-        /* Nieuwe aanvragen sturen mee wat er precies gevraagd werd. Zo klopt
-           dit overzicht ook nadat je het formulier later hebt aangepast.
-           Oudere aanvragen vallen terug op de vaste lijst eronder. */
-        Array.isArray(d._velden) && d._velden.length
-          ? `<div class="dl">${d._velden.map((v) => rij(v.label, v.waarde)).join("")}</div>`
-          : `
-        <div class="dl">
-          ${rij("Naam", d.naam || a.naam)}
-          ${rij("E-mailadres", d.email || a.email)}
-          ${rij("Bedrijf of kanaal", d.bedrijf)}
-          ${rij("Telefoon", d.telefoon)}
-        </div>
-
-        <div class="dl">
-          ${rij("Beschrijving", d.beschrijving)}
-          ${rij("Doel", d.doel)}
-          ${rij("Soort content", d.formaat)}
-          ${rij("Gewenste lengte", d.lengte)}
-          ${rij("Aantal video's", d.aantal)}
-          ${rij("Platform", d.platform)}
-          ${rij("Stijl", d.stijl)}
-          ${rij("Referenties", d.referenties)}
-        </div>
-
-        <div class="dl">
-          ${rij("Budget", d.budget)}
-          ${rij("Deadline", d.deadline)}
-          ${rij("Bestanden", d.drive)}
-          ${rij("Inhoud van de map", d.assets)}
-          ${rij("Extra informatie", d.extra)}
-        </div>`
+        a.volgcode
+          ? `<a class="mini" href="traject.html?code=${esc(a.volgcode)}" target="_blank" rel="noopener">Bekijk als klant</a>`
+          : `<button class="mini" data-maakvolg="${a.id}">Volgcode aanmaken</button>`
       }
+    </div>`;
 
-      <div class="field">
-        <label for="d-notitie">Jouw notitie (alleen jij ziet dit)</label>
-        <textarea id="d-notitie" rows="3">${esc(a.notitie || "")}</textarea>
+  dlg.dataset.project = a.id;
+  dlg.showModal();
+
+  laadProject(a.id).then(() => {
+    /* De fasekaart hangt af van de opgeleverde bestanden (staat er al een
+       finale versie?). Die komen pas na het openen binnen, dus tekenen we
+       de kaart daarna opnieuw. Anders kan de knop even verkeerd staan. */
+    const kaart = $("#pf-kaart");
+    if (kaart) kaart.innerHTML = faseActies(a);
+
+    const vak = $("#pf-leveringen");
+    if (vak) vak.innerHTML = leveringHtml();
+    const g = dlg.querySelector(".gesprek");
+    if (g) g.innerHTML = berichtHtml();
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Uploadvenster
+   --------------------------------------------------------------------------
+   Eén plek om een versie toe te voegen. Vanuit productie start dit meteen
+   de feedbackfase.
+   -------------------------------------------------------------------------- */
+
+function toonUpload(a) {
+  const dlg = $("#uploadvenster");
+  const eersteVersie = a.fase === "productie";
+  const finaleFase = a.fase === "download";
+  const ronde = finaleFase ? (a.rondes_op || 0) + 1 : (a.rondes_op || 0) + 1;
+
+  dlg.innerHTML = `
+    <div class="sheet__head">
+      <div>
+        <h2>${eersteVersie ? "Eerste versie uploaden" : finaleFase ? "Finale versie uploaden" : "Nieuwe versie uploaden"}</h2>
+        <p class="hint" style="margin:0">
+          Zet je bestand op Drive, kies Delen → Iedereen met de link, en plak die hier.
+        </p>
+      </div>
+      <button class="mini" type="button" data-upsluit="1">Sluiten</button>
+    </div>
+
+    <div class="sheet__body">
+      <div class="form">
+        <div class="form__row">
+          <div class="field">
+            <label for="nl-titel">Titel</label>
+            <input id="nl-titel" type="text" maxlength="120"
+                   value="${finaleFase ? "Finale versie" : "Versie " + ronde}">
+          </div>
+          <div class="field">
+            <label for="nl-soort">Soort</label>
+            <select id="nl-soort">
+              ${SOORTEN.map((o) => `<option value="${o.v}">${esc(o.t)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="nl-url">Link naar Google Drive of YouTube</label>
+          <input id="nl-url" type="url" maxlength="500"
+                 placeholder="https://drive.google.com/file/d/… of https://youtu.be/…">
+        </div>
+
+        <label class="schakel">
+          <input type="checkbox" id="nl-finaal" ${finaleFase ? "checked" : ""}>
+          <span class="schakel__spoor"><span class="schakel__knop"></span></span>
+          <span class="schakel__tekst">
+            <strong>Finale versie</strong>
+            <span>Zonder watermerk. Alleen deze is downloadbaar, en pas na betaling.</span>
+          </span>
+        </label>
+
+        <div id="nl-betaalvak" ${finaleFase ? "" : "hidden"}>
+          <div class="form__row">
+            <div class="field">
+              <label for="nl-bedrag">Te betalen</label>
+              <div class="euro">
+                <input id="nl-bedrag" type="text" maxlength="40" value="${esc(bedragZonderEuro(a.prijs))}">
+              </div>
+            </div>
+            <div class="field">
+              <label for="nl-betaallink">Betaallink</label>
+              <input id="nl-betaallink" type="url" maxlength="500"
+                     value="${esc(a.betaling_link || "")}" placeholder="Je Wero-verzoek">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="nl-notitie">Toelichting voor de klant</label>
+          <textarea id="nl-notitie" rows="3" maxlength="800"></textarea>
+        </div>
+
+        <div class="form__row">
+          <div class="field field--kort">
+            <label for="nl-ronde">Ronde</label>
+            <input id="nl-ronde" type="number" min="1" max="9" value="${ronde}">
+          </div>
+        </div>
+
+        <div class="form__note" id="nl-note" hidden></div>
       </div>
     </div>
 
     <div class="sheet__foot">
-      <div class="field" style="flex:1 1 180px">
-        <label for="d-status">Status</label>
-        <select id="d-status">
-          ${STATUSSEN.map(
-            (s) => `<option ${s === a.status ? "selected" : ""}>${s}</option>`
-          ).join("")}
-        </select>
-      </div>
-      <button class="btn btn--fill" data-bewaar="${a.id}">Opslaan</button>
-      <a class="mini" href="mailto:${esc(a.email)}?subject=${encodeURIComponent(
-        "Je projectaanvraag " + a.referentie
-      )}">Mail de klant</a>
+      <button class="btn btn--fill" data-nieuwelevering="${a.id}">
+        ${eersteVersie ? "Uploaden en naar feedback" : "Uploaden"}
+      </button>
+      <button class="mini" type="button" data-upsluit="1">Annuleren</button>
     </div>`;
 
   dlg.showModal();
+
+  /* Bij een finale versie hoort de betaallink erbij: de klant heeft die nodig
+     zodra hij op Download klikt. */
+  $("#nl-finaal").addEventListener("change", (e) => {
+    $("#nl-betaalvak").hidden = !e.target.checked;
+  });
 }
+
+$("#uploadvenster").addEventListener("click", (e) => {
+  if (e.target.closest("[data-upsluit]")) $("#uploadvenster").close();
+});
+sluitBijKlikNaast($("#uploadvenster"));
+
+/* Het uploadvenster staat buiten het projectvenster, dus het heeft een eigen
+   afhandelaar nodig. Hing dit aan #detail, dan kwam de klik nooit aan. */
+$("#uploadvenster").addEventListener("click", async (e) => {
+});
+
+
+
+/* Wisselen tussen de tabbladen in het venster */
+$("#detail").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-dtab]");
+  if (!t) return;
+  const dlg = $("#detail");
+  dlg.querySelectorAll("[data-dtab]").forEach((x) => x.classList.toggle("is-on", x === t));
+  dlg.querySelectorAll("[data-dpaneel]").forEach((p) => {
+    p.hidden = p.dataset.dpaneel !== t.dataset.dtab;
+  });
+});
+
+$("#detail").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-sub]");
+  if (!t) return;
+  $$("#detail .tabs--sub .tab").forEach((x) => x.classList.toggle("is-on", x === t));
+  $$("#detail [data-pane]").forEach((p) => (p.hidden = p.dataset.pane !== t.dataset.sub));
+});
 
 $("#detail").addEventListener("click", async (e) => {
   const dlg = $("#detail");
 
   if (e.target.closest("[data-sluit]")) { dlg.close(); return; }
 
-  const bewaar = e.target.closest("[data-bewaar]");
-  if (bewaar) {
-    bewaar.disabled = true;
-    const { error } = await sb
-      .from("project_requests")
-      .update({
-        status: $("#d-status").value,
-        notitie: $("#d-notitie").value.trim() || null
-      })
-      .eq("id", bewaar.dataset.bewaar);
-    bewaar.disabled = false;
-
-    if (error) { alert("Opslaan lukte niet: " + error.message); return; }
-    dlg.close();
-    loadAanvragen();
+  /* Volgcode aanmaken voor oudere aanvragen die er nog geen hebben */
+  const maakvolg = e.target.closest("[data-maakvolg]");
+  if (maakvolg) {
+    const code = nieuweCode();
+    const { error } = await sb.from("project_requests").update({ volgcode: code }).eq("id", maakvolg.dataset.maakvolg);
+    if (error) { alert("Aanmaken lukte niet: " + error.message); return; }
+    await loadAanvragen();
+    toonDetail(aanvragen.find((x) => x.id === maakvolg.dataset.maakvolg));
+    return;
   }
+
+  const kv = e.target.closest("[data-kopieer-volg]");
+  if (kv) {
+    await navigator.clipboard.writeText(kv.dataset.kopieerVolg).catch(() => {});
+    kv.textContent = "Gekopieerd";
+    setTimeout(() => (kv.textContent = "Kopieer"), 1600);
+    return;
+  }
+
+  const km = e.target.closest("[data-kopieer-mail]");
+  if (km) {
+    const link = location.href.split("#")[0].replace(/admin\.html.*$/, "traject.html");
+    const tekst =
+      `Hoi,\n\nJe project staat genoteerd. Met deze volgcode kan je op elk moment ` +
+      `bekijken hoe ver het staat, opgeleverd werk bekijken en feedback geven:\n\n` +
+      `${km.dataset.kopieerMail}\n${link}?code=${km.dataset.kopieerMail}\n\n` +
+      `Bewaar deze code goed.\n\nGroeten,\nJoppe`;
+    await navigator.clipboard.writeText(tekst).catch(() => {});
+    km.textContent = "Gekopieerd";
+    setTimeout(() => (km.textContent = "Kopieer mail"), 1600);
+    return;
+  }
+
+  /* Voortgang opslaan */
+  const pb = e.target.closest("[data-projectbewaar]");
+  if (pb) {
+    pb.disabled = true;
+    const { error } = await sb.from("project_requests").update({
+      fase: $("#pf-fase").value,
+      levering: $("#pf-levering2").value || null,
+      rondes: Number($("#pf-rondes").value) || 0,
+      rondes_op: Number($("#pf-op").value) || 0,
+      pakket: $("#pf-pakket").value.trim() || null,
+      prijs: metEuro($("#pf-prijs2").value) || null,
+      gratis: $("#pf-gratis2").checked,
+      betaling_nodig: !$("#pf-gratis2").checked,
+      betaling_link: $("#pf-betaallink3").value.trim() || null,
+      notitie: $("#d-notitie").value.trim() || null,
+      klantnota: $("#pf-nota").value.trim() || null,
+      ...faseExtra($("#pf-fase").value)
+    }).eq("id", pb.dataset.projectbewaar);
+    pb.disabled = false;
+    if (error) { alert("Opslaan lukte niet: " + error.message); return; }
+    await loadAanvragen();
+    toonDetail(aanvragen.find((x) => x.id === pb.dataset.projectbewaar));
+    return;
+  }
+
+  /* Levering toevoegen */
+
+  /* Het uploadvenster openen */
+  const up = e.target.closest("[data-upload]");
+  if (up) {
+    toonUpload(aanvragen.find((x) => x.id === up.dataset.upload));
+    return;
+  }
+
+  /* Alleen de datum doorgeven, zonder verder iets te wijzigen */
+  const dd = e.target.closest("[data-datumdoor]");
+  if (dd) {
+    const note = $("#pf-datumnote");
+    const waarde = $("#pf-levering").value;
+    if (!waarde) {
+      note.hidden = false;
+      note.className = "form__note form__note--err";
+      note.textContent = "Kies eerst een datum.";
+      return;
+    }
+    dd.disabled = true;
+    const { error } = await sb.from("project_requests")
+      .update({ levering: waarde }).eq("id", dd.dataset.datumdoor);
+    dd.disabled = false;
+    if (error) { alert("Opslaan lukte niet: " + error.message); return; }
+
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: dd.dataset.datumdoor, van: "systeem",
+      bericht: "De verwachte opleverdatum staat op " +
+        new Date(waarde).toLocaleDateString("nl-BE", { day: "2-digit", month: "long", year: "numeric" }) + "."
+    }]);
+    note.hidden = false;
+    note.className = "form__note form__note--ok";
+    note.textContent = "Doorgegeven aan de klant.";
+    return;
+  }
+
+  /* ---- Fases ---- */
+
+  /* Goedkeuren: het project start en de klant krijgt zijn traject */
+  const gk = e.target.closest("[data-goedkeuren]");
+  if (gk) {
+    const note = $("#pf-gknote");
+    const zegG = (m) => {
+      note.hidden = false;
+      note.className = "form__note form__note--err";
+      note.textContent = m;
+    };
+
+    const prijs = metEuro($("#pf-prijs").value);
+    const gratis = $("#pf-gratis").checked;
+    const rondes = Number($("#pf-rondes0").value) || 0;
+
+    if (!prijs) {
+      zegG("Vul eerst de prijs in. Ook bij een gratis project: de klant ziet dan wat het normaal kost.");
+      return;
+    }
+
+    gk.disabled = true;
+
+    /* Gratis? Dan is er niets te tekenen en gaat het project meteen door. */
+    const velden = {
+      prijs,
+      gratis,
+      rondes,
+      status: "goedgekeurd",
+      goedgekeurd_op: new Date().toISOString(),
+      afwijsreden: null,
+      betaling_nodig: !gratis,
+      betaling_bedrag: gratis ? null : prijs,
+      fase: gratis ? "ingepland" : "contract",
+      contract_tekst: gratis ? null : $("#pf-contract").value.trim()
+    };
+
+    const { error } = await sb.from("project_requests").update(velden).eq("id", gk.dataset.goedkeuren);
+    gk.disabled = false;
+    if (error) { zegG("Goedkeuren lukte niet: " + error.message); return; }
+
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: gk.dataset.goedkeuren, van: "systeem",
+      bericht: gratis
+        ? "Je aanvraag is goedgekeurd. Dit project is gratis, je hoeft niets te tekenen."
+        : "Je aanvraag is goedgekeurd. Teken de overeenkomst om te starten."
+    }]);
+    await herlaadDetail(gk.dataset.goedkeuren);
+    return;
+  }
+
+  /* Standaardtekst van het contract terugzetten */
+  const ch = e.target.closest("[data-contractherstel]");
+  if (ch) {
+    const id = $("#detail").dataset.project;
+    const a = aanvragen.find((x) => x.id === id);
+    $("#pf-contract").value = contractTekst(a, $("#pf-prijs").value.trim());
+    return;
+  }
+
+
+  /* Afwijzen met een reden */
+  const aw = e.target.closest("[data-afwijzen]");
+  if (aw) {
+    toonAfwijsvenster(aw.dataset.afwijzen);
+    return;
+  }
+
+  /* Een eigen bedankje bij een afgerond project */
+  const dank = e.target.closest("[data-dankbericht]");
+  if (dank) {
+    const tekst = $("#pf-dank").value.trim();
+    if (tekst.length < 2) return;
+    dank.disabled = true;
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: dank.dataset.dankbericht, van: "joppe", bericht: tekst
+    }]);
+    dank.disabled = false;
+    await herlaadDetail(dank.dataset.dankbericht);
+    return;
+  }
+
+  /* Vooruit of terug in het traject, via de pijltjes of door op een bol te
+     klikken. Zo kan je een stap overslaan én terugkeren. */
+  const stap = e.target.closest("[data-stap]");
+  if (stap) {
+    const id = $("#detail").dataset.project;
+    const fase = stap.dataset.stap;
+    stap.disabled = true;
+    const { error } = await sb.from("project_requests")
+      .update({ fase, ...faseExtra(fase) }).eq("id", id);
+    stap.disabled = false;
+    if (error) { alert("Wisselen lukte niet: " + error.message); return; }
+    await herlaadDetail(id);
+    return;
+  }
+
+  /* Van fase wisselen via de knoppen in de fasekaart */
+  const nf = e.target.closest("[data-naarfase]");
+  if (nf) {
+    const id = $("#detail").dataset.project;
+    const fase = nf.dataset.naarfase;
+    nf.disabled = true;
+
+    const velden = { fase: fase, ...faseExtra(fase) };
+    const datumveld = $("#pf-levering");
+    if (fase === "feedback" && datumveld && datumveld.value) velden.levering = datumveld.value;
+
+    const { error } = await sb.from("project_requests").update(velden).eq("id", id);
+    nf.disabled = false;
+    if (error) { alert("Wisselen lukte niet: " + error.message); return; }
+
+    /* Bij het afsluiten hoort een afsluitend bericht in het gesprek. */
+    if (fase === "afgewerkt") {
+      await sb.from("project_berichten").insert([{
+        aanvraag_id: id, van: "systeem",
+        bericht: "Dit project is afgerond. Bedankt voor de samenwerking! " +
+                 "Vergeet je bestand niet te bewaren: over drie dagen wordt alles gewist."
+      }]);
+    }
+
+    await herlaadDetail(id);
+    return;
+  }
+
+  /* Een gevraagde extra ronde toekennen of afwijzen */
+  const et = e.target.closest("[data-extratoe]");
+  if (et) {
+    const a = aanvragen.find((x) => x.id === et.dataset.extratoe);
+    await sb.from("project_requests").update({
+      rondes: (a.rondes || 0) + 1, extra_gevraagd: null, fase: "aanpassen"
+    }).eq("id", a.id);
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: a.id, van: "systeem",
+      bericht: "Je kreeg een extra feedbackronde. Joppe verwerkt je opmerkingen."
+    }]);
+    await herlaadDetail(a.id);
+    return;
+  }
+
+  const ew = e.target.closest("[data-extraweg]");
+  if (ew) {
+    const reden = prompt("Wat wil je de klant laten weten?",
+      "Een extra ronde valt buiten het pakket. Laat weten wat je in gedachten hebt, dan bekijk ik wat mogelijk is.");
+    if (reden === null) return;
+    await sb.from("project_requests").update({ extra_gevraagd: null }).eq("id", ew.dataset.extraweg);
+    if (reden.trim()) {
+      await sb.from("project_berichten").insert([{
+        aanvraag_id: ew.dataset.extraweg, van: "joppe", bericht: reden.trim()
+      }]);
+    }
+    await herlaadDetail(ew.dataset.extraweg);
+    return;
+  }
+
+  /* Een extra feedbackronde toekennen */
+  const er = e.target.closest("[data-extraronde]");
+  if (er) {
+    const a = aanvragen.find((x) => x.id === er.dataset.extraronde);
+    await sb.from("project_requests").update({ rondes: (a.rondes || 0) + 1 }).eq("id", a.id);
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: a.id, van: "systeem", bericht: "Je kreeg een extra feedbackronde."
+    }]);
+    await herlaadDetail(a.id);
+    return;
+  }
+
+  /* Betaling ontvangen */
+  const bt = e.target.closest("[data-betaald]");
+  if (bt) {
+    bt.disabled = true;
+    const { error } = await sb.from("project_requests").update({
+      betaald: true,
+      fase: "download",
+      betaling_bedrag: $("#pf-bedrag2").value.trim() || null,
+      betaling_link: $("#pf-betaallink2").value.trim() || null
+    }).eq("id", bt.dataset.betaald);
+    bt.disabled = false;
+    if (error) { alert("Opslaan lukte niet: " + error.message); return; }
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: bt.dataset.betaald, van: "systeem",
+      bericht: "Je betaling is ontvangen. Je eindbestand staat klaar."
+    }]);
+    await herlaadDetail(bt.dataset.betaald);
+    return;
+  }
+
+  /* Een levering als finale versie markeren */
+  const fn = e.target.closest("[data-finaal]");
+  if (fn) {
+    const b = leveringen.find((x) => x.id === fn.dataset.finaal);
+    await sb.from("project_files").update({ finaal: !b.finaal }).eq("id", b.id);
+    await herlaadDetail(b.aanvraag_id);
+    return;
+  }
+
+  /* Levering tonen, verbergen of verwijderen */
+  const tl = e.target.closest("[data-toonlevering]");
+  if (tl) {
+    const b = leveringen.find((x) => x.id === tl.dataset.toonlevering);
+    await sb.from("project_files").update({ zichtbaar: !b.zichtbaar }).eq("id", b.id);
+    await herlaadDetail(b.aanvraag_id);
+    return;
+  }
+  const wl = e.target.closest("[data-weglevering]");
+  if (wl) {
+    const b = leveringen.find((x) => x.id === wl.dataset.weglevering);
+    if (!confirm("Deze levering verwijderen?")) return;
+    await sb.from("project_files").delete().eq("id", wl.dataset.weglevering);
+    await herlaadDetail(b.aanvraag_id);
+    return;
+  }
+
+  /* Bericht naar de klant */
+  const pber = e.target.closest("[data-projectbericht]");
+  if (pber) {
+    const tekst = $("#pb-tekst").value.trim();
+    if (tekst.length < 2) return;
+    pber.disabled = true;
+    await sb.from("project_berichten").insert([{
+      aanvraag_id: pber.dataset.projectbericht, van: "joppe", bericht: tekst
+    }]);
+    await sb.from("project_berichten").update({ gelezen: true })
+      .eq("aanvraag_id", pber.dataset.projectbericht).eq("van", "klant");
+    pber.disabled = false;
+    await herlaadDetail(pber.dataset.projectbericht);
+    return;
+  }
+
+
 });
 
 /* Klik naast het venster om te sluiten */
-$("#detail").addEventListener("mousedown", (e) => {
-  if (e.target.id === "detail") $("#detail").close();
+sluitBijKlikNaast($("#detail"));
+
+/* Uploaden gebeurt in een eigen venster, dus dit hoort hier en niet bij de
+   luisteraar van het projectvenster: een klik in het ene venster bereikt het
+   andere niet. */
+$("#uploadvenster").addEventListener("click", async (e) => {
+  const nl = e.target.closest("[data-nieuwelevering]");
+  if (!nl) return;
+    const note = $("#nl-note");
+    const zeg = (m, k) => { note.hidden = false; note.textContent = m; note.className = "form__note form__note--" + k; };
+    const id = nl.dataset.nieuwelevering;
+    const a = aanvragen.find((x) => x.id === id);
+    const titel = $("#nl-titel").value.trim();
+    const url = $("#nl-url").value.trim();
+    const finaal = $("#nl-finaal").checked;
+    const ronde = Number($("#nl-ronde").value) || 1;
+
+    if (!titel) { zeg("Geef de versie een titel.", "err"); return; }
+    if (!url) { zeg("Plak de link naar je bestand op Drive of YouTube.", "err"); return; }
+    if (!/^https?:\/\//i.test(url)) { zeg("De link moet met https:// beginnen.", "err"); return; }
+
+    nl.disabled = true;
+    nl.textContent = "Bezig…";
+
+    try {
+      const { error } = await sb.from("project_files").insert([{
+        aanvraag_id: id, titel, soort: $("#nl-soort").value, url, finaal, ronde,
+        status: finaal ? "goedgekeurd" : "open",
+        notitie: $("#nl-notitie").value.trim() || null
+      }]);
+      if (error) throw error;
+
+      /* Een finale versie hoeft de klant niet meer goed te keuren: die stap is
+         al gezet. Wel moet de betaalinfo kloppen voor de downloadknop. */
+      if (finaal) {
+        const bedrag = metEuro($("#nl-bedrag")?.value) || null;
+        const link = $("#nl-betaallink")?.value.trim() || null;
+        await sb.from("project_requests").update({
+          betaling_bedrag: bedrag,
+          betaling_link: link,
+          prijs: bedrag || a?.prijs || null
+        }).eq("id", id);
+      }
+
+      /* Eerdere versies inklappen: alleen de nieuwste staat open bij de klant. */
+      await sb.from("project_files").update({ status: "verlopen" })
+        .eq("aanvraag_id", id).eq("status", "open").neq("ronde", ronde);
+
+      /* De klant hoort te weten dat er iets nieuws staat. */
+      if (!finaal) {
+        await sb.from("project_berichten").insert([{
+          aanvraag_id: id, van: "systeem",
+          bericht: `Er staat een nieuwe versie klaar om te bekijken: ${titel}.`
+        }]);
+      }
+
+      /* Het traject schuift vanzelf op:
+         een gewone versie zet productie om in feedback, een finale versie
+         gaat naar de betaling, of meteen naar downloaden als er niets te
+         betalen valt. */
+      if (finaal) {
+        const gratis = a?.gratis || !a?.betaling_nodig;
+        const volgende = gratis || a?.betaald ? "download" : "betaling";
+        await sb.from("project_requests").update({ fase: volgende }).eq("id", id);
+        await sb.from("project_berichten").insert([{
+          aanvraag_id: id, van: "systeem",
+          bericht: volgende === "betaling"
+            ? "De finale versie staat klaar. Na betaling kan je ze downloaden."
+            : "De finale versie staat klaar om te downloaden."
+        }]);
+      } else if (a && a.fase === "productie") {
+        await sb.from("project_requests").update({ fase: "feedback" }).eq("id", id);
+      }
+
+      nl.disabled = false;
+      nl.textContent = "Uploaden";
+      $("#uploadvenster").close();
+      await herlaadDetail(id);
+    } catch (err) {
+    nl.disabled = false;
+    nl.textContent = "Uploaden";
+    zeg(err.message || "Toevoegen lukte niet.", "err");
+  }
+});
+
+
+/* --------------------------------------------------------------------------
+   Herladen
+   --------------------------------------------------------------------------
+   Werk je in twee tabbladen, of wijzigde er iets buiten de admin, dan haal je
+   hiermee alles opnieuw op zonder de pagina te verversen.
+   -------------------------------------------------------------------------- */
+
+$("#herlaadknop").addEventListener("click", async (e) => {
+  const knop = e.currentTarget;
+  knop.disabled = true;
+  const origineel = knop.textContent;
+  knop.textContent = "Bezig…";
+
+  const taken = [loadMessages()];
+  if (aanvragenGeladen) taken.push(loadAanvragen());
+  if (reviewsGeladen) taken.push(loadReviews());
+  if (statsGeladen) taken.push(loadStats());
+  await Promise.all(taken);
+
+  knop.disabled = false;
+  knop.textContent = "Bijgewerkt";
+  setTimeout(() => (knop.textContent = origineel), 1400);
+});
+
+/* --------------------------------------------------------------------------
+   Testproject
+   --------------------------------------------------------------------------
+   Maakt een volledig nepproject aan zodat je het traject kan doorlopen zonder
+   een echte klant. Werkt met dezelfde functie als een echte aanvraag, dus wat
+   je hier test, gedraagt zich later net zo.
+   -------------------------------------------------------------------------- */
+
+const TESTNAMEN = ["Test Janssens", "Proef Peeters", "Demo De Vries", "Voorbeeld Van Damme"];
+
+$("#testproject").addEventListener("click", async (e) => {
+  const knop = e.currentTarget;
+  const naam = TESTNAMEN[Math.floor(Math.random() * TESTNAMEN.length)];
+  const pakketten = (work?.prijzen?.pakketten || []).filter((x) => x && x.naam);
+  const pakket = pakketten.length ? pakketten[0] : null;
+
+  knop.disabled = true;
+  knop.textContent = "Bezig…";
+
+  const { data, error } = await sb.rpc("submit_open_request", {
+    p_data: {
+      naam,
+      email: "test@voorbeeld.be",
+      titel: "[TEST] " + (pakket ? pakket.naam + " voor een testklant" : "Testproject"),
+      beschrijving:
+        "Dit is een testproject dat je zelf aanmaakte. Loop het traject gerust " +
+        "helemaal door; verwijder het achteraf met de knop Verwijder.",
+      telefoon: "0470 00 00 00",
+      pakket: pakket ? pakket.naam : null,
+      rondes: Number(pakket?.rondes ?? 2),
+      _velden: [
+        { label: "Naam", waarde: naam },
+        { label: "E-mailadres", waarde: "test@voorbeeld.be" },
+        { label: "Waarover gaat het?", waarde: "Een testproject om het traject uit te proberen." }
+      ]
+    }
+  });
+
+  knop.disabled = false;
+  knop.textContent = "+ Testproject aanmaken";
+
+  if (error || !data?.ok) {
+    alert("Aanmaken lukte niet: " + (error?.message || data?.reden || "onbekende fout"));
+    return;
+  }
+
+  await loadAanvragen();
+  const nieuw = aanvragen.find((x) => x.referentie === data.referentie);
+  if (nieuw) toonDetail(nieuw);
 });
 
 /* --------------------------------------------------------------------------
@@ -1078,9 +2301,7 @@ $("#reviewbewerk").addEventListener("click", async (e) => {
   loadReviews();
 });
 
-$("#reviewbewerk").addEventListener("mousedown", (e) => {
-  if (e.target.id === "reviewbewerk") $("#reviewbewerk").close();
-});
+sluitBijKlikNaast($("#reviewbewerk"));
 
 /* --------------------------------------------------------------------------
    Reservekopie van de inhoud
@@ -1209,13 +2430,12 @@ async function loadStats() {
 
   /* Cijfers over berichten en aanvragen erbij halen. head:true betekent dat
      we alleen het aantal opvragen, niet de inhoud. */
-  const [berTotaal, berOngelezen, aanvOpen, aanvTotaal, codesOpen, revWacht, revZicht] = await Promise.all([
+  const [berTotaal, berOngelezen, aanvOpen, aanvTotaal, revWacht, revZicht] = await Promise.all([
     sb.from("messages").select("id", { count: "exact", head: true }),
     sb.from("messages").select("id", { count: "exact", head: true }).eq("gelezen", false),
     sb.from("project_requests").select("id", { count: "exact", head: true })
       .in("status", ["nieuw", "in behandeling"]),
     sb.from("project_requests").select("id", { count: "exact", head: true }),
-    sb.from("project_codes").select("code", { count: "exact", head: true }).is("gebruikt_op", null),
     sb.from("reviews").select("id", { count: "exact", head: true }).eq("status", "wachtend"),
     sb.from("reviews").select("id", { count: "exact", head: true }).eq("status", "zichtbaar")
   ]);
@@ -1295,7 +2515,7 @@ async function loadStats() {
 
     <div class="group">
       <h2>Bezoeken per dag</h2>
-      <p class="hint">Hoogste dag: ${piek} ${piek === 1 ? "bezoek" : "bezoeken"}. Er staan ${n(codesOpen)} ongebruikte codes klaar.</p>
+      <p class="hint">Hoogste dag: ${piek} ${piek === 1 ? "bezoek" : "bezoeken"}. </p>
       <div class="bars">
         ${dagen
           .map(
@@ -1400,6 +2620,48 @@ const STERREN = [
 
 /* Onthoudt welke secties openstaan, zodat ze na een wijziging niet
    allemaal dichtklappen. */
+/* De onderdelen van het tabblad Inhoud, in de volgorde van het zijmenu.
+   Er staat er telkens één open: elf uitklapblokken onder elkaar was niet
+   te overzien. */
+const SECTIES = [
+  ["hero", "Bovenaan", "De site"],
+  ["stats", "Statistieken", "De site"],
+  ["over", "Over mij", "De site"],
+  ["team", "Team", "De site"],
+  ["projecten", "Projecten", "De site"],
+  ["opleidingen", "Opleidingen", "De site"],
+  ["prijzen", "Prijzen", "Aanvragen"],
+  ["form-prijsaanvraag", "Formulier prijsaanvraag", "Aanvragen"],
+  ["contract", "Overeenkomst", "Aanvragen"],
+  ["contact", "Contactformulier", "Onderaan"],
+  ["footer", "Footer", "Onderaan"]
+];
+
+let actieveSectie = "hero";
+
+function bouwZijnav() {
+  const nav = $("#zijnav");
+  if (!nav) return;
+
+  let vorige = "";
+  nav.innerHTML = SECTIES.map(([sleutel, naam, groep]) => {
+    const kop = groep !== vorige ? `<span class="zijnav__kop">${esc(groep)}</span>` : "";
+    vorige = groep;
+    return kop + `<button class="zijnav__knop ${sleutel === actieveSectie ? "is-on" : ""}"
+                    data-sectie="${sleutel}">${esc(naam)}</button>`;
+  }).join("");
+}
+
+function toonSectie(sleutel) {
+  actieveSectie = sleutel;
+  $$("#editor details").forEach((d) => {
+    d.hidden = d.dataset.g !== sleutel;
+    d.open = d.dataset.g === sleutel;
+  });
+  $$("#zijnav .zijnav__knop").forEach((b) => b.classList.toggle("is-on", b.dataset.sectie === sleutel));
+  $(".inhoud__paneel")?.scrollTo({ top: 0 });
+}
+
 function openSecties() {
   return new Set($$("#editor details[open]").map((d) => d.dataset.g));
 }
@@ -1685,13 +2947,43 @@ function buildEditor(bewaarOpen) {
           </div>
           <div class="grid2">
             ${field(`prijzen.pakketten.${i}.eenheid`, "Onder de prijs", "vanaf")}
-            ${keuze(`prijzen.pakketten.${i}.uitgelicht`, "Uitlichten", [
-              { v: "", t: "Gewoon" },
-              { v: "ja", t: "Uitgelicht met label" }
-            ])}
+            ${field(`prijzen.pakketten.${i}.rondes`, "Aantal feedbackrondes", "2")}
           </div>
+          <div style="margin:10px 0">
+            ${schakelaar(`prijzen.pakketten.${i}.uitgelicht`, "Dit pakket uitlichten",
+              "Er komt dan een label bovenaan en de knop wordt geel.")}
+          </div>
+          ${field(`prijzen.pakketten.${i}.label`, "Tekst op dat label", "Meest gekozen")}
           ${area(`prijzen.pakketten.${i}.beschrijving`, "Korte beschrijving", 2)}
           ${lines(`prijzen.pakketten.${i}.punten`, "Wat zit erin", "één per regel")}
+
+          <div style="margin-top:14px">
+            ${schakelaar(`prijzen.pakketten.${i}.formulier.gebruikEigen`,
+              "Eigen aanvraagformulier voor dit pakket",
+              "Staat dit uit, dan gebruikt dit pakket het algemene formulier voor prijsaanvragen.")}
+          </div>
+
+          ${
+            x.formulier?.gebruikEigen
+              ? `<div class="item item--blok" style="margin-top:12px">
+                   ${field(`prijzen.pakketten.${i}.formulier.kop`, "Titel boven het formulier")}
+                   ${area(`prijzen.pakketten.${i}.formulier.tekst`, "Tekst onder de titel", 2)}
+                   <div class="grid2">
+                     ${field(`prijzen.pakketten.${i}.formulier.knop`, "Tekst op de knop")}
+                     ${field(`prijzen.pakketten.${i}.formulier.bedankt`, "Bevestiging na verzenden")}
+                   </div>
+                   ${(x.formulier.groepen?.[0]?.velden || [])
+                     .map((v, vi) =>
+                       veldEditor(
+                         `prijzen.pakketten.${i}.formulier.groepen.0.velden`,
+                         v, vi, x.formulier.groepen[0].velden.length
+                       )
+                     )
+                     .join("")}
+                   ${addBtn(`prijzen.pakketten.${i}.formulier.groepen.0.velden`, "Veld toevoegen")}
+                 </div>`
+              : ""
+          }
         </div>`
         )
         .join("")}
@@ -1707,9 +2999,19 @@ function buildEditor(bewaarOpen) {
     "Dit formulier opent wanneer iemand bij een pakket op de knop klikt. Het pakket wordt automatisch ingevuld.",
     isOpen)}
 
-  ${formulierEditor("projectaanvraag", "Formulier: projectaanvraag",
-    "Dit is het formulier op de aanvraagpagina, dat klanten met een code invullen.",
-    isOpen)}
+
+  <details class="group" data-g="contract" ${isOpen("contract")}>
+    <summary><span>Overeenkomst</span><span class="group__sub">wat de klant tekent</span></summary>
+    <div class="group__body">
+      <p class="hint">
+        Dit is de basistekst. Bij elk project kan je hem nog aanpassen voor je
+        goedkeurt. Laat leeg om de ingebouwde tekst te gebruiken.
+        Beschikbaar: {naam}, {titel}, {pakket}, {rondes} en {prijs}.
+      </p>
+      ${area("contract.tekst", "Tekst", 16)}
+      <button class="mini" data-standaardcontract="1">Laad de ingebouwde tekst</button>
+    </div>
+  </details>
 
   <details class="group" data-g="opleidingen" ${isOpen("opleidingen")}>
     <summary><span>Opleidingen</span><span class="group__sub">${telling(o.length, "opleiding", "opleidingen")}</span></summary>
@@ -1799,6 +3101,10 @@ function buildEditor(bewaarOpen) {
       </div>
     </div>
   </details>`;
+
+  /* Het zijmenu en de zichtbare sectie bijwerken */
+  bouwZijnav();
+  toonSectie(SECTIES.some(([k]) => k === actieveSectie) ? actieveSectie : "hero");
 }
 /* Wat er verschijnt als je op "toevoegen" klikt.
    Paden met een nummer erin (formulieren.x.groepen.0.velden) worden op hun
@@ -1848,16 +3154,40 @@ function veldGewijzigd(e) {
   }
 
   setPath(work, el.dataset.path, v);
+
+  /* Zet je een eigen formulier aan, dan beginnen we met een kopie van het
+     algemene. Zo hoef je niet vanaf nul te vertrekken. */
+  if (v === true && el.dataset.path.endsWith(".formulier.gebruikEigen")) {
+    const basis = el.dataset.path.replace(".gebruikEigen", "");
+    const huidig = getPath(work, basis) || {};
+    if (!huidig.groepen || !huidig.groepen.length) {
+      const bron = JSON.parse(JSON.stringify(work.formulieren?.prijsaanvraag || { groepen: [] }));
+      setPath(work, basis, Object.assign({ gebruikEigen: true }, bron));
+    }
+  }
+
   status("Niet opgeslagen wijzigingen", "");
 
   /* Bij een schakelaar verandert de samenvatting rechts van de titel mee. */
-  if (el.dataset.kind === "bool") buildEditor(openSecties());
+  if (el.dataset.kind === "bool") buildEditor();
 }
+
+document.addEventListener("click", (e) => {
+  const knop = e.target.closest("#zijnav .zijnav__knop");
+  if (knop) toonSectie(knop.dataset.sectie);
+});
 
 $("#editor").addEventListener("input", veldGewijzigd);
 $("#editor").addEventListener("change", veldGewijzigd);
 
 $("#editor").addEventListener("click", (e) => {
+  if (e.target.closest("[data-standaardcontract]")) {
+    e.preventDefault();
+    setPath(work, "contract.tekst", STANDAARD_CONTRACT);
+    buildEditor(openSecties());
+    status("Niet opgeslagen wijzigingen", "");
+    return;
+  }
   const add = e.target.closest("[data-add]");
   const del = e.target.closest("[data-del]");
   const mv  = e.target.closest("[data-move]");
@@ -1884,16 +3214,7 @@ $("#editor").addEventListener("click", (e) => {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   } else return;
 
-  /* Hou de sectie waarin je bezig bent openstaan */
-  const open = openSecties();
-  const pad = (add || del || mv).dataset.add || (add || del || mv).dataset.arr;
-  if (pad) {
-    const deel = pad.split(".");
-    /* formulieren.prijsaanvraag.… hoort bij de sectie "form-prijsaanvraag" */
-    open.add(deel[0] === "formulieren" ? "form-" + deel[1] : deel[0]);
-  }
-
-  buildEditor(open);
+  buildEditor();
   status("Niet opgeslagen wijzigingen", "");
 });
 
@@ -1904,7 +3225,7 @@ function status(msg, kind) {
 }
 
 async function loadEditor() {
-  work = await window.loadContent();
+  work = window.herstelVerplicht(await window.loadContent());
   buildEditor();
   status("", "");
 }

@@ -32,40 +32,6 @@ statistieken en inhoud blijven staan.
 
 ---
 
-## De aanvraagpagina
-
-`aanvraag.html` is de pagina waar klanten hun project in detail beschrijven.
-
-**Hoe het werkt**
-
-1. Iemand stuurt je een bericht via het contactformulier.
-2. Lijkt het interessant? Ga in de admin naar **Aanvragen** → **Toegangscodes**
-   → vul een label in (bijvoorbeeld "Warande Kortrijk") → **Code genereren**.
-3. Klik **Kopieer**. Je krijgt een kant-en-klaar mailtje met de code en de link
-   op je klembord.
-4. De klant vult de code in en krijgt het formulier: werktitel, beschrijving,
-   doel, soort content, platform, stijl, referenties, budget, deadline, en een
-   link naar zijn Google Drive-map met beeldmateriaal.
-5. De aanvraag komt binnen in je admin, met een referentienummer.
-
-**Waarom codes en geen open formulier**
-
-Zo krijg je geen willekeurige of spam-aanvragen, en weet je bij elke aanvraag
-al wie het is. Elke code werkt één keer en vervalt automatisch na de termijn
-die je koos.
-
-**Hoe de codes beveiligd zijn**
-
-De codetabel is volledig afgeschermd: bezoekers kunnen er niets uit lezen. Het
-controleren en indienen gebeurt via twee databasefuncties die alleen antwoorden
-op "klopt deze ene code" — nooit met een lijst. Zonder die aanpak zou iemand
-met de anon key alle codes kunnen uitlezen.
-
-Codes bestaan uit 8 tekens uit een alfabet zonder verwarrende letters
-(geen O/0, geen I/1/L). Dat zijn ruim duizend miljard combinaties, dus raden
-heeft geen zin, en overtypen gaat foutloos.
-
----
 
 ## De admin
 
@@ -74,7 +40,7 @@ Ga naar `.../admin.html` en log in.
 **Berichten** — alles uit het contactformulier. Antwoorden, als gelezen
 markeren, verwijderen.
 
-**Aanvragen** — projectaanvragen met titel, naam, status en datum in de lijst.
+**Projecten** — alle projecten met titel, naam, fase en datum, filterbaar per fase.
 Klik **Bekijk** voor alle details in een venster. Daar zet je de status
 (nieuw → in behandeling → goedgekeurd → afgerond, of afgewezen), schrijf je een
 interne notitie die alleen jij ziet, en mail je de klant met één klik. Bovenaan
@@ -161,43 +127,143 @@ ook uit het menu. Zet de foto's in `assets/img` (vierkant werkt het best, zo'n
 
 ---
 
-## Prijzen en aanvragen
 
-De prijzensectie staat standaard **uit**. Je zet hem aan via **Inhoud** →
-**Prijzen** → het schuifje bovenaan.
 
-**Belangrijk: prijzen en de aanvraagpagina sluiten elkaar uit.** Zodra je de
-prijzen aanzet, gebeurt dit automatisch:
+## Diensten en projecten
 
-- de knop in het menu heet "Prijzen" en brengt bezoekers naar je pakketten
-- de link naar de aanvraagpagina verdwijnt uit de footer
-- wie `aanvraag.html` toch opent, krijgt een verwijzing naar je pakketten
+De dienstensectie staat standaard **uit**. Zet hem aan via **Inhoud** →
+**Prijzen** → het schuifje bovenaan. Zolang die uit staat, wijst de knop in je
+menu naar je contactformulier.
 
 Klikt iemand bij een pakket op de knop, dan opent een formulier met dat pakket
-al ingevuld. Zo'n aanvraag heeft geen code nodig en komt gewoon binnen bij
-**Aanvragen**, herkenbaar aan het label "via prijzen".
+al ingevuld. Na verzenden krijgt de klant een **volgcode**. Daarmee volgt hij
+zijn project op `traject.html`.
 
-Zet je de prijzen weer uit, dan werkt de aanvraagpagina met codes gewoon weer.
+Het formulier zelf pas je aan onder **Inhoud** → **Formulier prijsaanvraag**:
+per veld de vraag, het soort, of het verplicht is, en of het op halve breedte
+staat. Naam, e-mailadres, titel en beschrijving staan gemarkeerd als **vast**
+en kan je niet verwijderen — de database heeft ze nodig. De teksten erop mag
+je wel vrij veranderen.
 
 ---
 
-## Beide formulieren aanpassen
+## De fases van een project
 
-Onder **Inhoud** staan **Formulier: prijsaanvraag** en **Formulier:
-projectaanvraag**. Daar bepaal je zelf welke vragen er gesteld worden.
+In de admin, tabblad **Projecten**, zie je bij elk project precies één logische
+volgende stap.
 
-Per veld kan je instellen: de vraag, het soort veld (tekst, keuzelijst,
-aankruisvakjes, datum, getal, ...), een voorbeeldtekst, uitleg eronder, of het
-verplicht is, en of het op halve breedte staat. Velden en hele blokken kan je
-toevoegen, verslepen en verwijderen.
+| Fase | Wat er gebeurt |
+|---|---|
+| 1 · Goedkeuring | Je vult de **prijs** in en kiest Goedkeuren of Afwijzen. Wil je het gratis doen, vink dan **Gratis** aan: de klant ziet de prijs doorstreept en hoeft niets te tekenen. |
+| 2 · Wacht op akkoord | De klant leest de overeenkomst en tekent met zijn naam. Pas daarna gaat het project verder. Bij een gratis project wordt deze stap overgeslagen. |
+| 3 · Bevestigd | Staat op je to-do. |
+| 4 · In productie | Je geeft een richtdatum door (los knopje, zonder upload). Upload je de eerste versie, dan gaat het project vanzelf naar feedback. |
+| 5 · Klaar voor feedback | De klant keurt goed of vraagt een aanpassing. Elke aanpassing verbruikt een ronde. |
+| 6 · Betaling | De klant ziet bedrag en betaallink. Je kan de finale versie al klaarzetten: zichtbaar, maar niet downloadbaar. |
+| 7 · Downloaden | Na "Betaling ontvangen" komt de download vrij. |
+| 8 · Afgewerkt | Na drie dagen wist de database het project met alles erin. |
 
-Sommige velden zijn gemarkeerd als **vast**: naam, e-mailadres, titel en
-beschrijving. Die kan je niet verwijderen, want de database heeft ze nodig om
-te weten wie er aanvraagt en waarover het gaat. De tekst erop mag je wel vrij
-veranderen.
+### Een testproject aanmaken
 
-Bij elke ingediende aanvraag wordt bewaard wélke vraag er precies gesteld werd.
-Pas je het formulier later aan, dan blijven oudere aanvragen dus kloppen.
+Onderaan het tabblad **Projecten** staat een knop om een nepproject te maken.
+Dat loopt door dezelfde functie als een echte aanvraag, dus wat je erop test
+gedraagt zich later net zo. De titel begint met [TEST]; verwijderen doe je met
+de knop Verwijder.
+
+### Vooruit en terug in het traject
+
+In de fasebalk bovenaan een project staan pijltjes links en rechts van de
+bollen. Daarmee ga je een stap vooruit of terug. Je kan ook rechtstreeks op een
+bol klikken om naar die stap te springen.
+
+Het meeste gaat vanzelf: een eerste versie uploaden zet het project op
+feedback, een finale versie zet het op betaling (of meteen op downloaden bij
+een gratis project), en zodra de klant het eindbestand ophaalt gaat het naar
+afgewerkt.
+
+### Automatisch bijwerken
+
+De statuspagina van de klant haalt zichzelf elke twintig seconden opnieuw op,
+en meteen wanneer hij terugkeert naar het tabblad. Zet jij een project een stap
+verder, dan ziet de klant dat vanzelf, met een korte melding "Er is iets nieuws
+op deze pagina". Er wordt alleen opnieuw getekend als er echt iets veranderd
+is, dus zijn scrollpositie blijft staan.
+
+Supabase heeft ook een Realtime-functie, maar die kan hier niet gebruikt
+worden: Realtime luistert rechtstreeks op de tabellen, en de klant heeft daar
+bewust geen leesrechten. Zou ik die geven, dan kon iedereen alle projecten
+lezen.
+
+### Feedbackrondes
+
+Elke aanpassing die de klant vraagt, verbruikt een ronde. Zijn de rondes op,
+dan verdwijnt de knop **Goedkeuren**: die versie geldt dan als aanvaard. De
+klant kan wel een **extra ronde aanvragen** met een korte uitleg. Dat verzoek
+verschijnt bovenaan je projectdossier, met knoppen om toe te kennen of af te
+wijzen. Ken je toe, dan gaat het project meteen terug naar "aanpassen".
+
+Een finale versie hoeft de klant niet meer goed te keuren: die is bij het
+uploaden al aanvaard.
+
+Op de statuspagina ziet de klant onder "Klaar voor jouw feedback" een lijstje
+met Versie 1, Versie 2, ... en Finale versie. Dat lijstje volgt het aantal
+rondes van het pakket, dus het klopt ook bij nieuwe pakketten die je later
+toevoegt.
+
+Bij het tekenen moet de naam overeenkomen met de naam uit de aanvraag.
+Hoofdletters, accenten en leestekens tellen niet mee, dus "jan de smet" werkt
+ook voor "Jan De Smet".
+
+### De overeenkomst
+
+De prijs staat groot bovenaan bij de klant. Bij goedkeuring stel je die in en krijgt de klant een overeenkomst te
+tekenen: opdracht, prijs, betaling na goedkeuring, aantal feedbackrondes,
+levering, rechten, aangeleverd materiaal, annuleren en de bewaartermijn.
+
+De basistekst pas je aan onder **Inhoud** → **Overeenkomst**. Daar kan je
+{naam}, {titel}, {pakket}, {rondes} en {prijs} gebruiken; die worden per
+project ingevuld. Per project kan je de tekst nog bijstellen voor je goedkeurt.
+
+De getekende tekst wordt bewaard zoals hij op dat moment gold. Verander je later
+je basistekst, dan blijft staan waar de klant echt mee akkoord ging.
+
+---
+
+
+## Google Drive en het downloadslot
+
+Zet je bestand op Drive, klik **Delen** en kies **Iedereen met de link**. Plak
+die link in de admin bij een oplevering.
+
+De site haalt het bestands-id uit die link en toont het bestand meteen in beeld
+op de statuspagina van de klant. Vanaf fase 6 wordt diezelfde link omgezet naar
+een rechtstreekse downloadlink, zodat de klant niet eerst naar Drive moet.
+
+YouTube-links werken ook: die spelen af in de pagina. Handig voor grote video's,
+want dan hoeft er niets gedownload te worden om te bekijken.
+
+Markeer een oplevering als **finale versie** voor de versie zonder watermerk.
+Alleen die is te downloaden, en pas nadat de betaling rond is.
+
+### Wat het downloadslot wel en niet doet
+
+De server stuurt bij een niet-finale versie **geen enkele link** mee: geen
+deellink, geen downloadlink. Alleen het id dat nodig is om het bestand in beeld
+te tonen. De knop "Openen" is weg, en daarmee ook de weg naar de Drive-pagina
+waar Google zelf een downloadknop zet.
+
+**Maar wees hier eerlijk over naar jezelf:** zolang een Drive-bestand op
+"iedereen met de link" staat, kan iemand die het id uit de pagina plukt daar
+technisch nog steeds een download van maken. Dat is een eigenschap van Drive,
+niet iets wat ik in de site kan dichtzetten.
+
+Wat wél echt beschermt:
+
+1. **Zet een watermerk op elke versie die nog niet betaald is.** Dat is de
+   professionele standaard en de enige bescherming die niet te omzeilen valt.
+2. **Zet reviewvideo's als verborgen video op YouTube** in plaats van Drive.
+   Downloaden is daar een stuk lastiger, en afspelen werkt beter.
+3. Zet het finale bestand pas op Drive nadat de betaling binnen is.
 
 ---
 
@@ -246,7 +312,7 @@ volledige link in **Link naar afbeelding**.
 
 ```
 index.html              De publieke site
-aanvraag.html           Projectaanvraag met toegangscode
+traject.html            Projectstatus voor de klant
 admin.html              De beveiligde admin
 supabase-setup.sql      Database + beveiligingsregels
 .nojekyll               Nodig zodat GitHub Pages alles serveert
@@ -257,7 +323,6 @@ assets/
   js/config.js          Supabase-sleutels
   js/content.js         Standaardinhoud + database-helper
   js/main.js            Logica van de site
-  js/aanvraag.js        Logica van de aanvraagpagina
   js/formulier.js       Bouwt beide aanvraagformulieren op
   js/analytics.js       Bezoekersteller
   js/admin.js           Logica van de admin
@@ -272,7 +337,11 @@ assets/
 `https://xxxx.supabase.co`, zonder `/rest/v1/` erachter. Controleer ook of je
 gebruiker bevestigd is in Authentication → Users.
 
-**Iets werkt niet (code, review, formulier)** — log in op de admin. Staat er
+**Het oude codesysteem is weg.** De aparte aanvraagpagina met toegangscodes
+bestaat niet meer. Aanvragen komen nu binnen via je diensten, en de codes die
+er nu zijn, zijn **volgcodes**: daarmee volgt een klant zijn eigen project.
+
+**Iets werkt niet (review, formulier, project)** — log in op de admin. Staat er
 bovenaan een rode balk, dan ontbreekt er iets in je database en zegt die balk
 precies wat. Voor de details: **Aanvragen** → **Toegangscodes** →
 **Controleer de installatie**. Die test loopt alle negen onderdelen af (zes tabellen, één

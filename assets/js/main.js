@@ -10,6 +10,20 @@ const esc = (v) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
 
+/* Klik naast het venster om te sluiten.
+   Let op: de scrollbalk hoort bij het dialoogvenster zelf, dus een klik
+   daarop had als doelwit het venster en sloot het per ongeluk. Daarom
+   vergelijken we de muispositie met de randen in plaats van het doelwit. */
+function sluitBijKlikNaast(dlg) {
+  dlg.addEventListener("mousedown", (e) => {
+    const r = dlg.getBoundingClientRect();
+    const binnen =
+      e.clientX >= r.left && e.clientX <= r.right &&
+      e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!binnen) dlg.close();
+  });
+}
+
 const dig = (obj, path) => path.split(".").reduce((o, k) => (o == null ? o : o[k]), obj);
 
 /* --------------------------------------------------------------------------
@@ -296,6 +310,11 @@ function render(c) {
   const prSec = $("#prijzen-sectie");
   const pakketten = (pr.pakketten || []).filter((x) => x && x.naam);
   const prijzenAan = !!pr.zichtbaar && pakketten.length > 0;
+
+  /* Alleen een echte ja telt als uitgelicht. Een tekst als "gewoon" is in
+     JavaScript ook "waar", en zo bleef er ooit een pakket uitgelicht staan
+     terwijl het uitgezet was. */
+  const uit = (t) => t.uitgelicht === true || t.uitgelicht === "uitgelicht";
   window.__prijzenAan = prijzenAan;
 
   if (prSec) {
@@ -310,8 +329,8 @@ function render(c) {
       $("#prijzen").innerHTML = pakketten
         .map(
           (t) => `
-        <article class="tarief ${t.uitgelicht ? "is-uit" : ""} reveal">
-          ${t.uitgelicht ? `<span class="tarief__vlag">Meest gekozen</span>` : ""}
+        <article class="tarief ${uit(t) ? "is-uit" : ""} reveal">
+          ${uit(t) ? `<span class="tarief__vlag">${esc(t.label || "Meest gekozen")}</span>` : ""}
           <h3 class="tarief__naam">${esc(t.naam)}</h3>
           <p class="tarief__prijs ${/\d/.test(t.prijs || "") ? "" : "tarief__prijs--tekst"}">
             ${esc(t.prijs || "")}
@@ -329,7 +348,7 @@ function render(c) {
               )
               .join("")}
           </ul>
-          <button class="btn ${t.uitgelicht ? "btn--fill" : ""}"
+          <button class="btn ${uit(t) ? "btn--fill" : ""}"
                   data-prijs-open="${esc(t.naam)}">${esc(pr.knoptekst || "Vraag ernaar")}</button>
         </article>`
         )
@@ -384,25 +403,30 @@ function render(c) {
   $("#footer-copyright").textContent = c.footer?.copyright ? "· " + c.footer.copyright : "";
 
   /* De vaste links onderaan, elk apart aan of uit te zetten */
-  const vast = [];
-  if (!prijzenAan) vast.push(`<a href="aanvraag.html">Projectaanvraag</a>`);
+  const vast = [`<a href="traject.html">Projectstatus</a>`];
   if (c.footer?.toonReviewknop !== false) vast.push(`<a href="#" data-review-open>Schrijf een review</a>`);
   if (c.footer?.toonAdminlink !== false) vast.push(`<a href="admin.html">Admin</a>`);
   $("#footer-vast").innerHTML = vast.join("");
 
-  /* --------------------------------------------------------------------
-     Staan de prijzen aan, dan vervalt de aparte aanvraagpagina: bezoekers
-     kiezen dan eerst een pakket en vragen dat rechtstreeks aan.
-     -------------------------------------------------------------------- */
+  /* De knop naar je diensten. Staan die uit, dan heeft de knop geen doel
+     en verdwijnt hij, samen met het menu-item ernaast. */
   const cta = $("#nav-cta");
   if (cta) {
-    if (prijzenAan) {
-      cta.href = "#prijzen-sectie";
-      cta.textContent = c.prijzen?.knoplabel || "Prijzen";
-    } else {
-      cta.href = "aanvraag.html";
-      cta.textContent = "Projectaanvraag";
-    }
+    /* Staan je diensten aan, dan wijst de knop daarheen. Staan ze uit, dan
+       zou hij naar een sectie wijzen die er niet is, dus wordt het een
+       gewone contactknop. */
+    cta.hidden = false;
+    cta.href = prijzenAan ? "#prijzen-sectie" : "#contact";
+    cta.textContent = prijzenAan
+      ? (c.prijzen?.knoplabel || "Diensten")
+      : (c.hero?.knop2 || "Neem contact op");
+  }
+  /* Staan je diensten uit, dan verwijst de knop naar het contactformulier
+     in plaats van naar een sectie die er niet is. */
+  if (cta && !prijzenAan) {
+    cta.hidden = false;
+    cta.href = "#contact";
+    cta.textContent = "Neem contact op";
   }
 
   window.__content = c;
@@ -535,9 +559,7 @@ async function haalReviews() {
     }
     if (e.target.closest("[data-review-sluit]")) dlg.close();
   });
-  dlg.addEventListener("mousedown", (e) => {
-    if (e.target === dlg) dlg.close();
-  });
+  sluitBijKlikNaast(dlg);
 
   /* Tekstteller */
   tekst.addEventListener("input", () => {
@@ -620,10 +642,20 @@ async function haalReviews() {
     note.className = "form__note form__note--" + soort;
   };
 
-  const def = () => {
-    const d = JSON.parse(
-      JSON.stringify(window.__content?.formulieren?.prijsaanvraag || { groepen: [] })
-    );
+  const pakketVan = (naam) =>
+    (window.__content?.prijzen?.pakketten || []).find((p) => p && p.naam === naam);
+
+  /* Het formulier voor dit pakket. Heeft een pakket een eigen formulier
+     ingesteld in de admin, dan wint dat van het algemene. */
+  const def = (pakketNaam) => {
+    const eigen = pakketVan(pakketNaam)?.formulier;
+    const bron =
+      eigen && eigen.gebruikEigen && (eigen.groepen || []).length
+        ? eigen
+        : window.__content?.formulieren?.prijsaanvraag || { groepen: [] };
+
+    const d = JSON.parse(JSON.stringify(bron));
+
     /* De keuzelijst met pakketten vullen met wat er echt op de site staat */
     const namen = (window.__content?.prijzen?.pakketten || [])
       .filter((x) => x && x.naam)
@@ -640,7 +672,7 @@ async function haalReviews() {
     const open = e.target.closest("[data-prijs-open]");
     if (open) {
       e.preventDefault();
-      const d = def();
+      const d = def(open.dataset.prijsOpen);
 
       $("#prijs-kop").textContent = d.kop || "Vraag dit pakket aan";
       $("#prijs-tekst").textContent = d.tekst || "";
@@ -662,11 +694,12 @@ async function haalReviews() {
     if (e.target.closest("[data-prijs-sluit]")) dlg.close();
   });
 
-  dlg.addEventListener("mousedown", (e) => { if (e.target === dlg) dlg.close(); });
+  sluitBijKlikNaast(dlg);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const d = def();
+    const gekozen = doel.querySelector("#p-pakket")?.value || "";
+    const d = def(gekozen);
     const waarden = window.leesFormulier(doel, d, "p-");
 
     const mist = window.controleerFormulier(waarden, d);
@@ -678,7 +711,10 @@ async function haalReviews() {
     const sb = window.getSupabase();
     if (!sb) { zeg("Het formulier is nog niet gekoppeld aan de database.", "err"); return; }
 
-    waarden.titel = waarden.pakket ? "Prijsaanvraag: " + waarden.pakket : "Prijsaanvraag";
+    /* De klant geeft zelf een titel op; die gebruiken we overal. */
+    waarden.titel = waarden.titel?.trim() || "Naamloos project";
+    /* Het aantal feedbackrondes hangt aan het gekozen pakket. */
+    waarden.rondes = Number(pakketVan(waarden.pakket)?.rondes ?? 2);
 
     btn.disabled = true;
     const orig = btn.textContent;
@@ -704,7 +740,14 @@ async function haalReviews() {
       if (el.type === "checkbox") el.checked = false;
       else el.value = "";
     });
-    zeg((d.bedankt || "Bedankt.") + " Je referentie is " + data.referentie + ".", "ok");
+    /* De volgcode is het belangrijkste wat de klant meekrijgt: daarmee volgt
+       hij zijn project op. Die zetten we groot in beeld, niet in een zinnetje. */
+    $("#prijs-klaar").hidden = false;
+    $("#prijs-code").textContent = data.volgcode || data.referentie;
+    $("#prijs-codelink").href = "traject.html?code=" + encodeURIComponent(data.volgcode || "");
+    form.hidden = true;
+    $("#prijs-kop").textContent = "Aanvraag verstuurd";
+    $("#prijs-tekst").textContent = d.bedankt || "Bedankt.";
   });
 })();
 

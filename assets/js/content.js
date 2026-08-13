@@ -111,7 +111,7 @@ window.DEFAULT_CONTENT = {
 
   prijzen: {
     zichtbaar: false,
-    titel: "Wat het kost",
+    titel: "Diensten",
     tekst:
       "Elk project is anders, dus dit zijn richtprijzen. Vertel me wat je in gedachten hebt en ik maak een voorstel op maat.",
     voetnoot: "Alle prijzen zijn richtprijzen. Voor scholen en verenigingen kijk ik graag wat mogelijk is.",
@@ -122,7 +122,9 @@ window.DEFAULT_CONTENT = {
         eenheid: "per video",
         beschrijving: "Een korte video voor Shorts, Reels of TikTok.",
         punten: ["Tot 60 seconden", "Montage en ondertiteling", "Eén ronde feedback"],
-        uitgelicht: false
+        rondes: 1,
+        uitgelicht: false,
+        label: ""
       },
       {
         naam: "Long-form",
@@ -135,7 +137,9 @@ window.DEFAULT_CONTENT = {
           "Thumbnail inbegrepen",
           "Twee rondes feedback"
         ],
-        uitgelicht: true
+        rondes: 2,
+        uitgelicht: true,
+        label: "Meest gekozen"
       },
       {
         naam: "Livestream",
@@ -143,7 +147,9 @@ window.DEFAULT_CONTENT = {
         eenheid: "",
         beschrijving: "Multi-cam livestream met overlays en green screen.",
         punten: ["Meerdere camera's", "Live overlays en widgets", "Opname achteraf"],
-        uitgelicht: false
+        rondes: 2,
+        uitgelicht: false,
+        label: ""
       }
     ]
   },
@@ -187,86 +193,11 @@ window.DEFAULT_CONTENT = {
      ze nodig om te weten wie er aanvraagt en waarover het gaat. De tekst
      erop mag je wel vrij aanpassen.
      ------------------------------------------------------------------------ */
-  formulieren: {
-    projectaanvraag: {
-      kop: "Vertel me over je project",
-      tekst:
-        "Hoe vollediger je dit invult, hoe scherper ik kan inschatten wat er nodig is. Weet je iets nog niet? Laat het gerust leeg.",
-      knop: "Aanvraag indienen",
-      voetnoot: "Je kan dit maar één keer indienen met deze code.",
-      bedankt:
-        "Bedankt. Ik bekijk je aanvraag en neem contact op via het e-mailadres dat je opgaf.",
-      groepen: [
-        {
-          titel: "Jouw gegevens",
-          velden: [
-            { id: "naam", label: "Naam", type: "text", verplicht: true, half: true, vast: true },
-            { id: "email", label: "E-mailadres", type: "email", verplicht: true, half: true, vast: true },
-            { id: "bedrijf", label: "Bedrijf of kanaal", type: "text", half: true, placeholder: "Optioneel" },
-            { id: "telefoon", label: "Telefoonnummer", type: "tel", half: true, placeholder: "Optioneel" }
-          ]
-        },
-        {
-          titel: "Het project",
-          velden: [
-            { id: "titel", label: "Titel", type: "text", verplicht: true, vast: true,
-              placeholder: "Bijvoorbeeld: Aftermovie zomerfestival" },
-            { id: "beschrijving", label: "Wat wil je precies laten maken? Wie is je doelgroep?",
-              type: "textarea", verplicht: true, vast: true, regels: 6,
-              placeholder: "Beschrijf het idee, de boodschap en voor wie het bedoeld is." },
-            { id: "doel", label: "Wat moet het opleveren?", type: "select",
-              opties: ["Meer naamsbekendheid", "Meer verkoop of inschrijvingen", "Entertainment",
-                       "Informeren of uitleggen", "Sfeerbeeld of herinnering", "Iets anders"] }
-          ]
-        },
-        {
-          titel: "Vorm en platform",
-          velden: [
-            { id: "formaat", label: "Soort content", type: "select", half: true,
-              opties: ["Long-form", "Short-form", "Long-form én short-form", "Livestream",
-                       "Thumbnail design", "Iets anders"] },
-            { id: "lengte", label: "Gewenste lengte", type: "text", half: true,
-              placeholder: "Bijvoorbeeld: 8 à 10 minuten" },
-            { id: "platform", label: "Platform", type: "vinkjes",
-              opties: ["YouTube", "TikTok", "Instagram", "Facebook", "Twitch", "LinkedIn",
-                       "Eigen website", "Intern gebruik"] },
-            { id: "aantal", label: "Hoeveel video's?", type: "number", kort: true, placeholder: "1" }
-          ]
-        },
-        {
-          titel: "Stijl",
-          velden: [
-            { id: "stijl", label: "Welke richting zie je voor je?", type: "vinkjes",
-              opties: ["Cinematisch", "Snel en energiek", "Rustig en informatief", "Gaming",
-                       "Vlog", "Documentair", "Humoristisch", "Zakelijk"] },
-            { id: "referenties", label: "Voorbeelden die je aanspreken", type: "textarea", regels: 3,
-              placeholder: "Plak hier links naar video's met een stijl die je goed vindt." }
-          ]
-        },
-        {
-          titel: "Praktisch",
-          velden: [
-            { id: "budget", label: "Budget", type: "select", half: true,
-              opties: ["Minder dan € 100", "€ 100 – € 250", "€ 250 – € 500", "€ 500 – € 1000",
-                       "Meer dan € 1000", "Nog te bespreken"] },
-            { id: "deadline", label: "Wanneer heb je het nodig?", type: "date", half: true },
-            { id: "drive", label: "Link naar je bestanden", type: "url",
-              placeholder: "https://drive.google.com/…",
-              hint: "Zet je beeldmateriaal, logo's en muziek in een Google Drive-map en zet die op \"iedereen met de link kan bekijken\"." },
-            { id: "assets", label: "Wat zit er in die map?", type: "textarea", regels: 3,
-              placeholder: "Bijvoorbeeld: 40 minuten ruwe beelden, logo in SVG, twee muzieknummers." }
-          ]
-        },
-        {
-          titel: "Nog iets kwijt?",
-          velden: [
-            { id: "extra", label: "Extra informatie", type: "textarea", regels: 4,
-              placeholder: "Alles wat ik verder moet weten." }
-          ]
-        }
-      ]
-    },
+  contract: {
+    tekst: ""
+  },
 
+  formulieren: {
     prijsaanvraag: {
       kop: "Vraag dit pakket aan",
       tekst:
@@ -279,6 +210,8 @@ window.DEFAULT_CONTENT = {
           titel: "",
           velden: [
             { id: "pakket", label: "Welk pakket?", type: "select", vast: true, opties: [] },
+            { id: "titel", label: "Titel van je project", type: "text", verplicht: true, vast: true,
+              placeholder: "Bijvoorbeeld: Aftermovie zomerfestival" },
             { id: "naam", label: "Naam", type: "text", verplicht: true, half: true, vast: true },
             { id: "email", label: "E-mailadres", type: "email", verplicht: true, half: true, vast: true },
             { id: "telefoon", label: "Telefoonnummer", type: "tel", half: true, placeholder: "Optioneel" },
@@ -296,6 +229,28 @@ window.DEFAULT_CONTENT = {
 /* ==========================================================================
    Supabase helper
    ========================================================================== */
+
+
+/* Zorgt dat velden die het systeem nodig heeft altijd in het formulier staan.
+   Sla je inhoud op en komt er later een verplicht veld bij, dan overschrijft
+   je opgeslagen versie anders de nieuwe standaard en verdwijnt dat veld. */
+window.herstelVerplicht = function (c) {
+  const f = c?.formulieren?.prijsaanvraag;
+  if (!f || !Array.isArray(f.groepen) || !f.groepen.length) return c;
+
+  const alle = f.groepen.flatMap((g) => g.velden || []);
+  const standaard = window.DEFAULT_CONTENT.formulieren.prijsaanvraag.groepen[0].velden;
+
+  standaard
+    .filter((v) => v.vast && !alle.some((x) => x.id === v.id))
+    .forEach((v) => {
+      /* Achteraan het eerste blok, zodat de volgorde niet raar wordt. */
+      f.groepen[0].velden = f.groepen[0].velden || [];
+      f.groepen[0].velden.push(JSON.parse(JSON.stringify(v)));
+    });
+
+  return c;
+};
 
 window.getSupabase = function () {
   if (!window.SUPABASE_READY || !window.supabase) return null;
@@ -322,7 +277,7 @@ window.loadContent = async function () {
       .eq("id", 1)
       .single();
     if (error || !data || !data.data) return fallback;
-    return Object.assign(fallback, data.data);
+    return herstelVerplicht(Object.assign(fallback, data.data));
   } catch (e) {
     return fallback;
   }

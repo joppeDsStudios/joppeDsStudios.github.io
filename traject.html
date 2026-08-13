@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projectstatus — JoppeDS Studio's</title>
+<meta name="description" content="Volg de status van je project bij JoppeDS Studio's met je volgcode.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#14161c">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar is-stuck">
+  <div class="wrap topbar__in">
+    <a class="brand" href="index.html">
+      <span class="brand__mark">
+        <img src="assets/img/logo.svg" alt="" onerror="this.remove()">
+        <span class="brand__fallback">JDS</span>
+      </span>
+      <span>JoppeDS Studio's</span>
+    </a>
+    <nav class="nav" aria-label="Hoofdmenu">
+      <a href="index.html">Terug naar de site</a>
+    </nav>
+  </div>
+</header>
+
+<main class="aanvraag">
+  <div class="wrap">
+
+    <!-- ---------- Code invoeren ---------- -->
+    <section id="stap-code">
+      <div class="monitor monitor--slim">
+        <span class="monitor__corner monitor__corner--tl"></span>
+        <span class="monitor__corner monitor__corner--tr"></span>
+        <span class="monitor__corner monitor__corner--bl"></span>
+        <span class="monitor__corner monitor__corner--br"></span>
+
+        <div class="monitor__bar">
+          <span class="monitor__onair"><span class="tally"></span> Projectstatus</span>
+        </div>
+
+        <div class="lower">
+          <p class="hero__kicker">Volg je project</p>
+          <h1 class="hero__title hero__title--sm">Waar staat het?</h1>
+        </div>
+
+        <p class="hero__sub">
+          Vul je volgcode in. Die kreeg je toen je aanvraag binnenkwam. Je ziet
+          meteen hoe ver je project staat en kan er feedback op geven.
+        </p>
+
+        <form class="codeform" id="codeform">
+          <div class="field">
+            <label for="code">Volgcode</label>
+            <input id="code" type="text" inputmode="text" autocomplete="off"
+                   spellcheck="false" placeholder="JDS-XXXX-XXXX">
+          </div>
+          <div class="form__note" id="codenote" hidden></div>
+          <button class="btn btn--fill" type="submit" id="codebtn">Project openen</button>
+        </form>
+
+        <p class="field__hint" style="margin-top:22px">
+          Code kwijt? Mail naar het adres waarmee je de aanvraag deed, dan zoek ik hem op.
+        </p>
+      </div>
+    </section>
+
+    <!-- ---------- Het project ---------- -->
+    <section id="stap-project" hidden>
+
+      <div class="traject__kop">
+        <div>
+          <p class="eyebrow" id="pr-pakket">Project</p>
+          <h1 class="h2" id="pr-titel"></h1>
+          <p class="lead" id="pr-meta"></p>
+        </div>
+        <div class="kopknoppen">
+          <button class="mini" id="herlaad" title="Nieuwe berichten en versies ophalen">Herladen</button>
+          <button class="mini" id="uitloggen">Andere code</button>
+        </div>
+      </div>
+
+      <!-- Tijdlijn -->
+      <div class="fset">
+        <h2 class="fset__kop">Voortgang</h2>
+        <ol class="tijdlijn" id="pr-tijdlijn"></ol>
+        <p class="field__hint" id="pr-nota" hidden></p>
+        <div class="form__note form__note--ok" id="pr-vernieuwd" hidden style="margin-top:14px">
+          Er is iets nieuws op deze pagina.
+        </div>
+        <div class="form__note" id="pr-info" hidden style="margin-top:14px"></div>
+
+        <div class="codekaart">
+          <div>
+            <span class="codekaart__lbl">Jouw projectcode</span>
+            <code class="volgcode" id="pr-code">—</code>
+          </div>
+          <p class="codekaart__uitleg">
+            Zorg dat je de code niet verliest. Indien nodig stuur een bericht via
+            <a href="index.html#contact">contact</a>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Opgeleverd werk -->
+      <div class="fset">
+        <h2 class="fset__kop">
+          Opgeleverd werk
+          <span class="fset__nr" id="pr-rondes"></span>
+        </h2>
+        <p class="form__note" id="pr-rondemelding" hidden></p>
+        <div id="pr-bestanden"></div>
+      </div>
+
+      <!-- Gesprek -->
+      <div class="fset">
+        <h2 class="fset__kop">Berichten</h2>
+        <div class="gesprek" id="pr-berichten"></div>
+
+        <div class="field">
+          <label for="pr-vraag">Een vraag stellen</label>
+          <textarea id="pr-vraag" rows="3" maxlength="3000"
+            placeholder="Een gewone vraag kost je geen feedbackronde."></textarea>
+        </div>
+        <div class="form__note" id="pr-note" hidden></div>
+        <div>
+          <button class="btn" id="pr-verstuur">Bericht versturen</button>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</main>
+
+<!-- Feedbackvenster -->
+<dialog class="sheet sheet--smal" id="afgewezendlg">
+  <div class="sheet__body" style="text-align:center;padding:34px 26px">
+    <h2 style="margin:0 0 12px">Deze aanvraag is niet aangenomen</h2>
+    <p class="lead" id="afgewezen-reden" style="margin:0 auto 24px"></p>
+    <button class="btn btn--fill" id="afgewezen-ok">Ik begrijp het.</button>
+  </div>
+</dialog>
+
+<dialog class="sheet sheet--smal" id="extradlg">
+  <div class="sheet__head">
+    <div><h2>Extra ronde aanvragen</h2></div>
+    <button class="mini" type="button" data-extrasluit>Sluiten</button>
+  </div>
+  <form class="sheet__body form" id="extraform">
+    <p class="field__hint">
+      Je rondes uit het pakket zijn op. Beschrijf wat je nog wil wijzigen; Joppe
+      laat weten of het lukt en wat het kost.
+    </p>
+    <div class="field">
+      <label for="ex-tekst">Wat wil je nog aanpassen?</label>
+      <textarea id="ex-tekst" rows="4" maxlength="1500"></textarea>
+    </div>
+    <div class="form__note" id="ex-note" hidden></div>
+    <div><button class="btn btn--fill" type="submit" id="ex-verstuur">Aanvraag versturen</button></div>
+  </form>
+</dialog>
+
+<dialog class="sheet sheet--smal" id="klaardlg">
+  <div class="sheet__body" style="padding:34px 26px">
+    <div class="feest" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <h2 style="margin:0 0 10px;text-align:center">Je bestand is onderweg</h2>
+    <p class="lead" style="margin:0 auto 22px;text-align:center">
+      Bedankt voor de samenwerking. Bewaar je bestand goed: over enkele dagen
+      wordt dit project automatisch gewist.
+    </p>
+
+    <div id="klaar-review">
+      <p class="field__hint" style="text-align:center;margin-bottom:14px">
+        Tevreden? Een korte review helpt Joppe enorm.
+      </p>
+
+      <form class="form" id="klaarreviewform">
+        <div class="field">
+          <label>Hoeveel sterren?</label>
+          <div class="sterkies" id="kr-sterren" role="radiogroup" aria-label="Beoordeling">
+            <input type="radio" name="krsterren" id="krs5" value="5">
+            <label for="krs5"><span class="vh">5 sterren</span>
+              <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+            <input type="radio" name="krsterren" id="krs4" value="4">
+            <label for="krs4"><span class="vh">4 sterren</span>
+              <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+            <input type="radio" name="krsterren" id="krs3" value="3">
+            <label for="krs3"><span class="vh">3 sterren</span>
+              <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+            <input type="radio" name="krsterren" id="krs2" value="2">
+            <label for="krs2"><span class="vh">2 sterren</span>
+              <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+            <input type="radio" name="krsterren" id="krs1" value="1">
+            <label for="krs1"><span class="vh">1 ster</span>
+              <svg viewBox="0 0 20 19" aria-hidden="true"><path d="M10 0l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L10 14.3 4.2 17.8l1.6-6.6L.6 6.8l6.8-.5z" fill="currentColor"/></svg></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="kr-tekst">Je review</label>
+          <textarea id="kr-tekst" rows="3" maxlength="1500"
+            placeholder="Hoe verliep de samenwerking?"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="kr-rol">Bedrijf, kanaal of functie</label>
+          <input id="kr-rol" type="text" maxlength="100" placeholder="Optioneel">
+        </div>
+
+        <div class="form__note" id="kr-note" hidden></div>
+
+        <div class="klaar__acts">
+          <button class="btn btn--fill" type="submit" id="kr-verstuur">Review versturen</button>
+          <button class="mini" type="button" id="kr-later">Liever niet</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="klaar-dank" hidden style="text-align:center">
+      <p class="lead" style="margin:0 0 20px">Bedankt voor je review.</p>
+      <button class="btn" id="klaar-sluit">Sluiten</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="sheet sheet--smal" id="gratisdlg">
+  <div class="sheet__body gratis" style="padding:40px 26px 34px">
+    <div class="confetti" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <p class="gratis__lbl">Speciaal voor jou</p>
+
+    <p class="gratis__prijs">
+      <s id="gratis-bedrag">€ 0</s>
+    </p>
+
+    <p class="gratis__woord"><span>G</span><span>r</span><span>a</span><span>t</span><span>i</span><span>s</span></p>
+
+    <p class="lead" style="margin:0 auto 24px;text-align:center">
+      Joppe doet dit project gratis. Je hoeft niets te tekenen en niets te betalen.
+    </p>
+    <div style="text-align:center">
+      <button class="btn btn--fill" id="gratis-ok">Top, bedankt!</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="sheet sheet--smal" id="betaaldlg">
+  <div class="sheet__head">
+    <div><h2>Nog even betalen</h2></div>
+    <button class="mini" type="button" data-betaalsluit>Sluiten</button>
+  </div>
+  <div class="sheet__body" style="text-align:center">
+    <p class="betaalbedrag" id="betaal-bedrag"></p>
+    <div id="betaal-knop"></div>
+    <p class="field__hint" style="margin-top:16px">
+      Je betaalt rechtstreeks via de link. Zodra Joppe de betaling ziet, geeft
+      hij je bestand vrij: herlaad deze pagina daarna om te downloaden.
+    </p>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="contractdlg">
+  <div class="sheet__head">
+    <div>
+      <h2>Overeenkomst</h2>
+    </div>
+    <button class="mini" type="button" data-contractsluit>Sluiten</button>
+  </div>
+
+  <form class="sheet__body form" id="contractform">
+    <div class="prijsblok">
+      <span class="prijsblok__lbl">Prijs</span>
+      <span class="prijsblok__bedrag" id="contract-prijs">—</span>
+    </div>
+
+    <details class="voorwaarden">
+      <summary>
+        <span class="voorwaarden__kop">Lees de voorwaarden!</span>
+        <span class="voorwaarden__knop">Uitvouwen</span>
+      </summary>
+      <pre class="contract" id="contract-tekst"></pre>
+    </details>
+
+    <label class="check check--los">
+      <input type="checkbox" id="ct-akkoord">
+      <span>Ik ga akkoord met deze voorwaarden en betaal de prijs zodra ik het
+            eindresultaat goedkeur.</span>
+    </label>
+
+    <div class="field">
+      <label for="ct-naam">Je naam als handtekening</label>
+      <input id="ct-naam" type="text" maxlength="80" autocomplete="name">
+      <p class="field__hint" id="ct-naamhint"></p>
+    </div>
+
+    <div class="form__note" id="ct-note" hidden></div>
+
+    <div>
+      <button class="btn btn--fill" type="submit" id="ct-teken">Tekenen en starten</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="fbdlg">
+  <div class="sheet__head">
+    <div>
+      <h2>Feedback geven</h2>
+      <p class="field__hint" id="fb-op"></p>
+    </div>
+    <button class="mini" type="button" data-fb-sluit>Sluiten</button>
+  </div>
+  <form class="sheet__body form" id="fbform">
+    <div class="form__note form__note--err" id="fb-waarschuwing" hidden></div>
+    <div class="field">
+      <label for="fb-tekst">Wat mag er anders?</label>
+      <textarea id="fb-tekst" rows="6" maxlength="3000"
+        placeholder="Wees zo concreet mogelijk. Verwijs gerust naar een tijdstip, bijvoorbeeld: op 1:24 staat de muziek te luid."></textarea>
+      <p class="field__hint">Hoe concreter je bent, hoe minder rondes je nodig hebt.</p>
+    </div>
+    <div class="form__note" id="fb-note" hidden></div>
+    <div>
+      <button class="btn btn--fill" type="submit" id="fb-verstuur">Feedback versturen</button>
+    </div>
+  </form>
+</dialog>
+
+<footer class="footer">
+  <div class="wrap footer__onder" style="border:0;padding-top:0">
+    <span>© <span id="jaar"></span> JoppeDS Studio's</span>
+    <a href="index.html">Naar de website</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/content.js"></script>
+<script src="assets/js/traject.js"></script>
+<script src="assets/js/analytics.js"></script>
+</body>
+</html>

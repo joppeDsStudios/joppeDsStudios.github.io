@@ -549,3 +549,375 @@ mark {
 .item--veld { background: var(--bg); }
 .item--veld .item__nr { color: var(--text); text-transform: none; letter-spacing: 0;
                         font-family: var(--display); font-size: 13px; font-weight: 600; }
+
+/* ---------- Tabblad Inhoud: zijmenu ---------- */
+
+.inhoud { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 900px) { .inhoud { grid-template-columns: 210px 1fr; } }
+
+.zijnav { display: flex; flex-direction: column; gap: 2px; }
+@media (min-width: 900px) { .zijnav { position: sticky; top: 90px; } }
+
+.zijnav__kop {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 16px 10px 6px;
+}
+.zijnav__kop:first-child { padding-top: 4px; }
+
+.zijnav__knop {
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  color: var(--muted);
+  font-family: var(--display);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color .2s var(--ease), background .2s var(--ease);
+}
+.zijnav__knop:hover { color: var(--text); background: var(--panel); }
+.zijnav__knop.is-on {
+  color: var(--accent);
+  background: var(--panel);
+  border-color: var(--line-2);
+  font-weight: 600;
+}
+
+/* In deze weergave staat er altijd precies één sectie open, dus het
+   uitklapgedrag van de titelbalk is overbodig. */
+.inhoud details.group > summary { cursor: default; }
+.inhoud details.group > summary::before { display: none; }
+.inhoud details.group > summary:hover { background: transparent; }
+
+/* Op telefoon schuift het menu horizontaal boven de inhoud. */
+@media (max-width: 899px) {
+  .zijnav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .zijnav::-webkit-scrollbar { display: none; }
+  .zijnav__kop { display: none; }
+  .zijnav__knop { flex: 0 0 auto; white-space: nowrap; border-color: var(--line); font-size: 13px; }
+}
+
+/* ---------- Detailvenster: subtabbladen ---------- */
+
+.tabs--sub {
+  padding: 12px 22px 0;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 74px;
+  background: var(--bg-2);
+  z-index: 2;
+}
+
+.sub-kop {
+  font-size: 15px;
+  letter-spacing: -.01em;
+  margin: 28px 0 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.volgcode {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: .1em;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 5px 10px;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.field input[type="file"] {
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+.field input[type="file"]::file-selector-button {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  margin-right: 12px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.volgblok {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r);
+  background: var(--bg);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.volgblok__lbl {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.volgblok__acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.volgblok .volgcode { margin: 0; }
+
+/* ---------- Tabs in het detailvenster ---------- */
+
+.sheet__tabs {
+  position: sticky;
+  top: 74px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+  padding: 12px 22px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sheet__tabs::-webkit-scrollbar { display: none; }
+.sheet__tabs .tab { flex: 0 0 auto; white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .sheet__tabs { top: 0; padding: 10px 16px; }
+}
+
+/* ---------- Fases van een project ---------- */
+
+.fasebalk {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-2);
+}
+.fasebalk__stap {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line-2);
+  flex: none;
+}
+.fasebalk__stap.is-klaar { background: var(--accent); border-color: var(--accent); color: #14161c; }
+.fasebalk__stap.is-nu {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 223, 89, .16);
+}
+.fasebalk__naam {
+  margin-left: auto;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  font-size: 14px;
+}
+.fasebalk--weg { color: var(--red); border-color: var(--red); font-weight: 600; font-size: 14px; }
+
+/* De kaart met wat je nú kan doen */
+.fasekaart {
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: rgba(255, 223, 89, .05);
+  padding: 20px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 12px;
+}
+.fasekaart--klaar { border-color: var(--green); background: rgba(79, 209, 139, .05); }
+.fasekaart__kop { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+.fasekaart .hint { margin: 0; }
+.fasekaart__acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+.bericht.is-systeem {
+  border-left: 3px solid var(--line-2);
+  background: transparent;
+  font-style: italic;
+  color: var(--muted);
+}
+
+@media (max-width: 620px) {
+  .fasebalk__naam { margin-left: 0; flex: 1 1 100%; }
+  .fasekaart__acts .btn { flex: 1 1 100%; justify-content: center; }
+}
+
+/* ---------- Codes onder de projecttitel ---------- */
+
+.kopcodes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.kopcode {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.kopcode span {
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kopcode--geel { border-color: var(--accent); color: var(--accent); }
+.kopcode--geel span { color: var(--muted); }
+
+.werkkop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 26px 0 12px;
+}
+
+@media (max-width: 620px) {
+  .kopcode { font-size: 11px; padding: 4px 8px; }
+}
+
+.fasebalk__ronde {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.testblok {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--line-2);
+}
+
+/* Prijsveld: het euroteken is een vast vakje links van het invoerveld.
+   Eerder zweefde het als overlay boven het veld, wat rommelig oogde en
+   botste met de rand. Nu is het één geheel. */
+.euro {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-2);
+  overflow: hidden;
+  transition: border-color .25s var(--ease);
+}
+.euro:focus-within { border-color: var(--accent); }
+
+.euro::before {
+  content: "€";
+  display: grid;
+  place-items: center;
+  width: 42px;
+  flex: none;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.euro input {
+  flex: 1;
+  min-width: 0;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.euro input:focus { outline: none; }
+
+/* Verzoek van de klant, boven de fasekaart */
+.verzoek {
+  border: 1px solid #7fb2ff;
+  border-left-width: 3px;
+  border-radius: var(--r);
+  background: rgba(127, 178, 255, .07);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.verzoek__kop {
+  margin: 0 0 8px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: #7fb2ff;
+}
+.verzoek__tekst { margin: 0 0 14px; white-space: pre-wrap; }
+.verzoek__acts { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Pijltjes en klikbare bollen in de fasebalk */
+.fasepijl {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+.fasepijl:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--panel); }
+.fasepijl:disabled { opacity: .3; cursor: default; }
+
+/* De bollen zijn nu knoppen: je kan er rechtstreeks naartoe springen */
+button.fasebalk__stap {
+  cursor: pointer;
+  font-family: var(--mono);
+  padding: 0;
+}
+button.fasebalk__stap:hover { border-color: var(--accent); color: var(--accent); }
+button.fasebalk__stap.is-klaar:hover { color: #14161c; }
+
+.fasebalk--weg { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
