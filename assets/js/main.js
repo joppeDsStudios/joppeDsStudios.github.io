@@ -40,6 +40,129 @@ const dig = (obj, path) => path.split(".").reduce((o, k) => (o == null ? o : o[k
   }, 40);
 })();
 
+
+/* --------------------------------------------------------------------------
+   De showreel afspelen
+   --------------------------------------------------------------------------
+   Herkent YouTube, Vimeo, Google Drive en een gewoon videobestand. Zo hoef je
+   niet te onthouden welke soort link waar hoort: plak wat je hebt.
+   -------------------------------------------------------------------------- */
+
+function reelSpeler(reel) {
+  const url = String(reel.url || "").trim();
+  const titel = esc(reel.titel || "Showreel");
+
+  /* Browsers laten een video alleen vanzelf starten als hij gedempt is. Dat
+     is een regel van de browser, niet iets wat ik kan omzeilen. Daarom start
+     hij zonder geluid en zetten we er een knop bij om het aan te zetten.
+     Speelt hij niet vanzelf, dan hoort de bezoeker gewoon meteen geluid als
+     hij op play drukt. */
+  const geluidsknop = reel.autoplay
+    ? `<button class="reel__geluid" data-geluid type="button">
+         <span class="reel__geluidicoon" aria-hidden="true">
+           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+             <path d="M8 2.5 4.5 5.5H2v5h2.5L8 13.5v-11Z" fill="currentColor"/>
+             <path class="reel__uit" d="M11 6l4 4M15 6l-4 4" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round"/>
+             <path class="reel__aan" d="M11 5.5a3.5 3.5 0 0 1 0 5M13 3.5a6.5 6.5 0 0 1 0 9"
+                   stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+           </svg>
+         </span>
+         <span class="reel__geluidtekst">Geluid aan</span>
+       </button>`
+    : "";
+
+  const yt = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+  );
+  if (yt) {
+    /* enablejsapi laat ons het geluid later aanzetten zonder de video opnieuw
+       te laden, dus zonder dat hij terugspringt naar het begin. */
+    const opties =
+      "rel=0&modestbranding=1&playsinline=1&enablejsapi=1" +
+      (reel.autoplay ? "&autoplay=1&mute=1&loop=1&playlist=" + yt[1] : "");
+    return `<div class="reel__kader" data-soort="youtube">
+        <iframe src="https://www.youtube-nocookie.com/embed/${esc(yt[1])}?${opties}"
+                title="${titel}" loading="lazy" allowfullscreen
+                allow="autoplay; accelerometer; encrypted-media; picture-in-picture"
+                referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        ${geluidsknop}
+      </div>`;
+  }
+
+  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeo) {
+    const opties = reel.autoplay ? "?autoplay=1&muted=1&loop=1" : "";
+    return `<div class="reel__kader" data-soort="vimeo">
+        <iframe src="https://player.vimeo.com/video/${esc(vimeo[1])}${opties}"
+                title="${titel}" loading="lazy" allowfullscreen
+                allow="autoplay; fullscreen; picture-in-picture"></iframe>
+        ${geluidsknop}
+      </div>`;
+  }
+
+  const drive = url.match(/\/file\/d\/([A-Za-z0-9_-]{10,})/);
+  if (drive) {
+    return `<div class="reel__kader" data-soort="drive">
+        <iframe src="https://drive.google.com/file/d/${esc(drive[1])}/preview"
+                title="${titel}" loading="lazy" allowfullscreen
+                allow="autoplay"></iframe>
+      </div>`;
+  }
+
+  if (/\.(mp4|webm|mov)(\?|$)/i.test(url)) {
+    return `<div class="reel__kader" data-soort="bestand">
+        <video controls playsinline preload="metadata"
+               ${reel.poster ? `poster="${esc(reel.poster)}"` : ""}
+               ${reel.autoplay ? "autoplay muted loop" : ""}>
+          <source src="${esc(url)}">
+          Je browser kan deze video niet afspelen.
+        </video>
+        ${geluidsknop}
+      </div>`;
+  }
+
+  return `<a class="btn btn--fill" href="${esc(url)}" target="_blank" rel="noopener">
+            Bekijk de showreel
+          </a>`;
+}
+
+/* De geluidsknop. Bij YouTube en Vimeo praten we met de speler via een
+   bericht, zodat de video niet opnieuw begint. */
+document.addEventListener("click", (e) => {
+  const knop = e.target.closest("[data-geluid]");
+  if (!knop) return;
+
+  const kader = knop.closest(".reel__kader");
+  const soort = kader.dataset.soort;
+  const aan = !knop.classList.contains("is-aan");
+
+  if (soort === "youtube") {
+    const speler = kader.querySelector("iframe");
+    speler.contentWindow.postMessage(
+      JSON.stringify({ event: "command", func: aan ? "unMute" : "mute", args: [] }),
+      "*"
+    );
+    if (aan) {
+      speler.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "setVolume", args: [100] }), "*"
+      );
+    }
+  } else if (soort === "vimeo") {
+    const speler = kader.querySelector("iframe");
+    speler.contentWindow.postMessage(
+      JSON.stringify({ method: "setVolume", value: aan ? 1 : 0 }), "*"
+    );
+  } else {
+    const video = kader.querySelector("video");
+    if (video) video.muted = !aan;
+  }
+
+  knop.classList.toggle("is-aan", aan);
+  knop.querySelector(".reel__geluidtekst").textContent = aan ? "Geluid uit" : "Geluid aan";
+});
+
+
 /* --------------------------------------------------------------------------
    Menu op telefoon
    -------------------------------------------------------------------------- */
@@ -193,6 +316,35 @@ function render(c) {
     } else {
       foto.addEventListener("load", toon);
       foto.addEventListener("error", weg);
+    }
+  }
+
+  /* Showreel.
+     Werkt met YouTube, Vimeo, een Google Drive-link of een eigen mp4. Staat
+     hij uit of is er geen link, dan verdwijnt de hele sectie. */
+  const reel = c.reel || {};
+  const reelSec = $("#reel-sectie");
+  const reelAan = !!reel.zichtbaar && !!String(reel.url || "").trim();
+
+  if (reelSec) {
+    reelSec.hidden = !reelAan;
+    const navReel = $("#nav-reel");
+    if (navReel) navReel.hidden = !reelAan;
+
+    if (reelAan) {
+      $("#reel-kicker").textContent = reel.kicker || "Showreel";
+      $("#reel-titel").textContent = reel.titel || "Dit is wat ik maak";
+      $("#reel-tekst").textContent = reel.tekst || "";
+      $("#reel-tekst").hidden = !reel.tekst;
+
+      const knopvak = $("#reel-knopvak");
+      knopvak.hidden = !reel.knop;
+      if (reel.knop) {
+        $("#reel-knop").textContent = reel.knop;
+        $("#reel-knop").href = reel.knopLink || "#contact";
+      }
+
+      $("#reel-vak").innerHTML = reelSpeler(reel);
     }
   }
 

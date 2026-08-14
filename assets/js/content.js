@@ -35,6 +35,18 @@ window.DEFAULT_CONTENT = {
     foto: ""
   },
 
+  reel: {
+    zichtbaar: false,
+    kicker: "Showreel",
+    titel: "Dit is wat ik maak",
+    tekst: "Een minuut door mijn werk van het afgelopen jaar.",
+    url: "",
+    poster: "",
+    knop: "Werk samen",
+    knopLink: "#contact",
+    autoplay: false
+  },
+
   team: {
     titel: "Het team",
     tekst: "De mensen achter JoppeDS Studio's.",

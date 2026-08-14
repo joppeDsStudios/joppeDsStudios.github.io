@@ -45,6 +45,8 @@
         <button class="tab is-on" data-tab="berichten">Berichten <span id="badge"></span></button>
         <button class="tab" data-tab="aanvragen">Projecten <span id="badge-aanvragen"></span></button>
         <button class="tab" data-tab="reviews">Reviews <span id="badge-reviews"></span></button>
+        <button class="tab" data-tab="agenda">Agenda <span id="badge-agenda"></span></button>
+        <button class="tab" data-tab="bib">Bibliotheek</button>
         <button class="tab" data-tab="bezoekers">Bezoekers</button>
         <button class="tab" data-tab="inhoud">Inhoud</button>
       </div>
@@ -140,6 +142,54 @@
       <div id="reviewlijst"></div>
     </section>
 
+    <!-- ---------- Agenda ---------- -->
+    <section class="tabpane" id="pane-agenda" hidden>
+      <div class="ag-balk">
+        <div class="ag-nav">
+          <button class="mini" id="ag-vorige" aria-label="Vorige">&larr;</button>
+          <button class="mini" id="ag-vandaag">Vandaag</button>
+          <button class="mini" id="ag-volgende" aria-label="Volgende">&rarr;</button>
+          <h2 class="ag-titel" id="ag-titel">—</h2>
+        </div>
+
+        <div class="ag-rechts">
+          <div class="ag-weergave" id="ag-weergave">
+            <button class="mini is-on" data-weergave="maand">Maand</button>
+            <button class="mini" data-weergave="week">Week</button>
+            <button class="mini" data-weergave="lijst">Lijst</button>
+          </div>
+          <button class="btn btn--fill" id="ag-nieuw">+ Nieuw</button>
+        </div>
+      </div>
+
+      <div class="ag-filters" id="ag-filters"></div>
+
+      <div id="ag-weergavevak"></div>
+
+      <div class="ag-onder">
+        <button class="mini" id="ag-export">Exporteer naar agenda (.ics)</button>
+        <span class="hint" style="margin:0">
+          Importeer dat bestand in Google Agenda of je telefoon.
+        </span>
+      </div>
+    </section>
+
+    <!-- ---------- Bibliotheek ---------- -->
+    <section class="tabpane" id="pane-bib" hidden>
+      <div class="bib-balk">
+        <div class="zoek">
+          <svg class="zoek__icoon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="search" id="bib-zoek" placeholder="Zoek op titel, tag of omschrijving…" autocomplete="off">
+          <button class="zoek__wis" type="button" data-wis="bib-zoek" hidden aria-label="Zoekopdracht wissen">&times;</button>
+        </div>
+        <button class="btn btn--fill" id="bib-nieuw">+ Link toevoegen</button>
+      </div>
+
+      <div class="bib-filters" id="bib-filters"></div>
+
+      <div id="bib-lijst"></div>
+    </section>
+
     <!-- ---------- Bezoekers ---------- -->
     <section class="tabpane" id="pane-bezoekers" hidden>
       <div class="range" id="range">
@@ -191,10 +241,14 @@
 <dialog class="sheet" id="reviewbewerk"></dialog>
 <dialog class="sheet" id="afwijsvenster"></dialog>
 <dialog class="sheet" id="uploadvenster"></dialog>
+<dialog class="sheet" id="agendavenster"></dialog>
+<dialog class="sheet" id="bibvenster"></dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/content.js"></script>
 <script src="assets/js/admin.js"></script>
+<script src="assets/js/agenda.js"></script>
+<script src="assets/js/bibliotheek.js"></script>
 </body>
 </html>

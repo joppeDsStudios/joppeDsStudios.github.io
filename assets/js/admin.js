@@ -140,6 +140,14 @@ $$(".tab").forEach((t) =>
       reviewsGeladen = true;
       loadReviews();
     }
+    if (t.dataset.tab === "agenda" && !agendaGeladen) {
+      agendaGeladen = true;
+      loadAgenda();
+    }
+    if (t.dataset.tab === "bib" && !bibGeladen) {
+      bibGeladen = true;
+      loadBib();
+    }
   })
 );
 
@@ -1914,6 +1922,8 @@ $("#herlaadknop").addEventListener("click", async (e) => {
   if (aanvragenGeladen) taken.push(loadAanvragen());
   if (reviewsGeladen) taken.push(loadReviews());
   if (statsGeladen) taken.push(loadStats());
+  if (agendaGeladen) taken.push(loadAgenda());
+  if (bibGeladen) taken.push(loadBib());
   await Promise.all(taken);
 
   knop.disabled = false;
@@ -2627,6 +2637,7 @@ const SECTIES = [
   ["hero", "Bovenaan", "De site"],
   ["stats", "Statistieken", "De site"],
   ["over", "Over mij", "De site"],
+  ["reel", "Showreel", "De site"],
   ["team", "Team", "De site"],
   ["projecten", "Projecten", "De site"],
   ["opleidingen", "Opleidingen", "De site"],
@@ -2857,6 +2868,44 @@ function buildEditor(bewaarOpen) {
     </div>
   </details>
 
+
+  <details class="group" data-g="reel" ${isOpen("reel")}>
+    <summary><span>Showreel</span><span class="group__sub">${
+      work.reel?.zichtbaar && work.reel?.url ? "staat op de site" : "verborgen"
+    }</span></summary>
+    <div class="group__body">
+      ${schakelaar("reel.zichtbaar", "Toon de showreel op je site",
+        "Zonder link blijft de sectie hoe dan ook weg.")}
+
+      <div class="field">
+        <label for="reel-url-veld">Link naar je video</label>
+        <input type="text" data-path="reel.url" id="reel-url-veld"
+               value="${esc(work.reel?.url || "")}"
+               placeholder="https://youtu.be/… of een Drive-link">
+        <p class="field__hint">
+          YouTube, Vimeo, Google Drive of een eigen .mp4-bestand: alles werkt.
+          Voor YouTube kan je de video op "verborgen" zetten als je hem niet in
+          je kanaal wil.
+        </p>
+      </div>
+
+      <div class="grid2">
+        ${field("reel.kicker", "Bovenschrift", "Showreel")}
+        ${field("reel.titel", "Titel", "Dit is wat ik maak")}
+      </div>
+      ${area("reel.tekst", "Tekst onder de titel", 2)}
+
+      <div class="grid2">
+        ${field("reel.knop", "Tekst op de knop", "Laat leeg voor geen knop")}
+        ${field("reel.knopLink", "Waar gaat die knop naartoe", "#contact")}
+      </div>
+
+      ${field("reel.poster", "Voorbeeldbeeld", "Alleen nodig bij een eigen .mp4")}
+
+      ${schakelaar("reel.autoplay", "Automatisch afspelen",
+        "In een lus. Browsers eisen dat een video die vanzelf start gedempt begint, dus komt er een knop \"Geluid aan\" op de video. Staat dit uit, dan hoort de bezoeker meteen geluid zodra hij op play drukt.")}
+    </div>
+  </details>
 
   <details class="group" data-g="team" ${isOpen("team")}>
     <summary><span>Team</span><span class="group__sub">${

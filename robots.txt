@@ -1,4 +1,5 @@
 # JoppeDS Studio's
+# De statuspagina en de admin horen niet in Google thuis.
 
 User-agent: *
 Allow: /$

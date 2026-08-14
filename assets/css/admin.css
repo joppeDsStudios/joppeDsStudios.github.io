@@ -921,3 +921,368 @@ button.fasebalk__stap:hover { border-color: var(--accent); color: var(--accent);
 button.fasebalk__stap.is-klaar:hover { color: #14161c; }
 
 .fasebalk--weg { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+
+/* ==========================================================================
+   Agenda
+   ========================================================================== */
+
+.ag-balk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ag-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ag-titel { margin: 0 0 0 6px; font-size: 19px; letter-spacing: -.02em; text-transform: capitalize; }
+.ag-rechts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ag-weergave { display: flex; gap: 4px; }
+.ag-weergave .mini.is-on { color: var(--accent); border-color: var(--accent); }
+
+.ag-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.ag-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .2s var(--ease), border-color .2s var(--ease), opacity .2s var(--ease);
+  opacity: .45;
+}
+.ag-filter.is-on { opacity: 1; color: var(--text); border-color: var(--line-2); }
+.ag-stip { width: 8px; height: 8px; border-radius: 50%; background: var(--kleur); flex: none; }
+
+.ag-onder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-2);
+}
+
+/* ---- Maandweergave ---- */
+
+.kal { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.kal__kop {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+}
+.kal__kop span {
+  padding: 10px 8px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kal__raster { display: grid; grid-template-columns: repeat(7, 1fr); }
+
+.kal__dag {
+  min-height: 104px;
+  padding: 6px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background .15s var(--ease);
+}
+.kal__dag:nth-child(7n) { border-right: 0; }
+.kal__dag:hover { background: var(--panel-2); }
+.kal__dag.is-buiten { opacity: .35; }
+.kal__dag.is-vandaag { background: rgba(255, 223, 89, .07); }
+.kal__dag.is-vandaag .kal__nr {
+  background: var(--accent);
+  color: #14161c;
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  font-weight: 700;
+}
+
+.kal__nr { font-family: var(--mono); font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+.kal__items { display: grid; gap: 3px; }
+
+.kal__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 3px 6px;
+  border: 0;
+  border-left: 3px solid var(--kleur);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 11px;
+  line-height: 1.35;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background .15s var(--ease);
+}
+.kal__item:hover { background: var(--line); }
+.kal__item b { color: var(--kleur); font-weight: 700; }
+.kal__item.is-klaar { opacity: .45; text-decoration: line-through; }
+
+.kal__meer {
+  background: none; border: 0; padding: 2px 6px;
+  color: var(--muted); font-family: var(--mono); font-size: 10px;
+  cursor: pointer; text-align: left;
+}
+.kal__meer:hover { color: var(--accent); }
+
+/* ---- Weekweergave ---- */
+
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.week__dag {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+}
+.week__dag.is-vandaag { border-color: var(--accent); }
+.week__kop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.week__naam { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.week__nr { font-weight: 700; font-size: 15px; }
+.week__plus {
+  margin-left: auto;
+  width: 20px; height: 20px;
+  border: 1px solid var(--line-2); border-radius: 3px;
+  background: transparent; color: var(--muted);
+  cursor: pointer; line-height: 1;
+}
+.week__plus:hover { color: var(--accent); border-color: var(--accent); }
+
+.week__items { padding: 8px; display: grid; gap: 6px; align-content: start; }
+.week__item {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 7px 9px;
+  border: 0;
+  border-left: 3px solid var(--kleur);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--display);
+}
+.week__item:hover { background: var(--line); }
+.week__item.is-klaar { opacity: .45; }
+.week__tijd { font-family: var(--mono); font-size: 10px; color: var(--kleur); }
+.week__titel { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.week__leeg { color: var(--line-2); text-align: center; margin: 10px 0 0; }
+
+/* ---- Lijstweergave ---- */
+
+.aglijst { display: grid; gap: 10px; }
+.aglijst__dag {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+}
+.aglijst__dag.is-vandaag { border-color: var(--accent); }
+.aglijst__datum { text-align: center; padding-top: 4px; }
+.aglijst__nr { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.aglijst__maand,
+.aglijst__weekdag {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.aglijst__items { display: grid; gap: 6px; }
+.aglijst__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  text-align: left;
+  padding: 9px 12px;
+  border: 0;
+  border-left: 3px solid var(--kleur);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--display);
+}
+.aglijst__item:hover { background: var(--line); }
+.aglijst__item.is-klaar { opacity: .45; text-decoration: line-through; }
+.aglijst__tijd { font-family: var(--mono); font-size: 11px; color: var(--kleur); min-width: 92px; }
+.aglijst__titel { font-weight: 600; letter-spacing: -.01em; flex: 1; overflow-wrap: anywhere; }
+.aglijst__plaats { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* ==========================================================================
+   Bibliotheek
+   ========================================================================== */
+
+.bib-balk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.bib-balk .zoek { flex: 1; min-width: 200px; margin: 0; }
+.bib-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.bib-filters .mini.is-on { color: var(--accent); border-color: var(--accent); }
+
+.bib-raster {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px)  { .bib-raster { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .bib-raster { grid-template-columns: repeat(3, 1fr); } }
+
+.bibkaart {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .25s var(--ease), transform .25s var(--ease);
+}
+.bibkaart:hover { border-color: var(--line-2); transform: translateY(-3px); }
+
+.bibkaart__beeld {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.bibkaart__beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bibkaart__beeld img[hidden] { display: none; }
+.bibkaart__bron {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bibkaart__open {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 22, 28, .74);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .2s var(--ease);
+}
+.bibkaart__beeld:hover .bibkaart__open { opacity: 1; }
+
+.bibkaart__body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+/* Zonder deze regel begint de knoppenrij bij elke kaart op een andere hoogte,
+   want de ene omschrijving is langer dan de andere. */
+.bibkaart__tekst { flex: 0 1 auto; }
+.bibkaart__tags { margin-top: auto; }
+.bibkaart__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bibkaart__ster {
+  background: none; border: 0; cursor: pointer;
+  color: var(--line-2); font-size: 18px; line-height: 1; padding: 0;
+  transition: color .2s var(--ease), transform .2s var(--ease);
+}
+.bibkaart__ster:hover { transform: scale(1.15); }
+.bibkaart__ster.is-on { color: var(--accent); }
+
+.bibkaart__titel { margin: 0; font-size: 16px; letter-spacing: -.02em; line-height: 1.35; overflow-wrap: anywhere; }
+.bibkaart__tekst { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+.bibkaart__tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+.bibkaart__map {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--line-2); border-radius: 3px; padding: 3px 7px;
+}
+.bibtag {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted); background: var(--bg-2); border-radius: 3px; padding: 3px 7px;
+  cursor: pointer; transition: color .2s var(--ease);
+}
+.bibtag:hover { color: var(--accent); }
+
+.bibkaart__acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-top: 6px; }
+.bibkaart__teller { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: auto; }
+
+/* ---- Kleinere schermen ---- */
+
+@media (max-width: 900px) {
+  .kal__dag { min-height: 78px; }
+  .kal__item { font-size: 10px; padding: 2px 4px; }
+  .week { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .ag-balk { flex-direction: column; align-items: stretch; }
+  .ag-nav { justify-content: space-between; }
+  .ag-titel { margin-left: 0; font-size: 17px; flex: 1 1 100%; order: -1; text-align: center; }
+  .ag-rechts { justify-content: space-between; }
+  .ag-weergave { flex: 1; }
+  .ag-weergave .mini { flex: 1; text-align: center; }
+
+  /* Op telefoon zijn zeven kolommen te smal om iets te lezen: de maand toont
+     dan alleen stipjes, en één tik opent die dag. */
+  .kal__dag { min-height: 54px; padding: 4px; }
+  .kal__item {
+    font-size: 0;
+    height: 5px;
+    padding: 0;
+    border-left: 0;
+    background: var(--kleur);
+    border-radius: 100px;
+  }
+  .kal__item b { display: none; }
+  .kal__meer { font-size: 9px; padding: 0 2px; }
+  .kal__nr { font-size: 11px; }
+
+  .week { grid-template-columns: 1fr; }
+  .week__dag { min-height: 0; }
+
+  .aglijst__dag { grid-template-columns: 50px 1fr; gap: 10px; }
+  .aglijst__item { gap: 6px; }
+  .aglijst__tijd { min-width: 0; flex: 1 1 100%; }
+
+  .bib-balk { flex-direction: column; align-items: stretch; }
+  .bib-balk .btn { justify-content: center; }
+}
